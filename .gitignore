@@ -1,0 +1,6 @@
+# Dados brutos nao vao para o repositorio (o enunciado nao exige)
+*.csv
+*.zip
+
+# Sistema
+.DS_Store
