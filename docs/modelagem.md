@@ -98,12 +98,17 @@ A coluna `tipo_bandeira` resolve a P4 diretamente, separando postos de marca dos
 | data | date | Chave da dimensão |
 | ano, mes, dia | int | Componentes da data |
 | ano_mes | string | Formato aaaa-mm, usado nas séries mensais |
-| ano_semana | string | Ano e semana ISO, usado na comparação semanal da P5 |
+| semana_inicio | date | Segunda-feira que inicia a semana; é a chave de agrupamento semanal da P5 |
+| ano_semana | string | Rótulo legível da semana (aaaa-Snn), apenas para leitura |
 | trimestre, semestre | int | Agregações mais largas |
 | dia_semana | string | Nome do dia |
 
 Uma dimensão de tempo evita repetir extração de partes da data em cada consulta e padroniza o que é
 "mês" e o que é "semana" em todas as análises.
+
+A semana é identificada pela data da segunda-feira que a inicia, e não por um rótulo do tipo
+ano mais número da semana. Na virada do ano, a mesma semana pertence a dois anos civis e qualquer
+convenção de nome fica ambígua; uma data não fica.
 
 ## Diagrama
 
@@ -144,7 +149,7 @@ erDiagram
     dim_tempo {
         date data PK
         string ano_mes
-        string ano_semana
+        date semana_inicio
         int ano
         int mes
     }

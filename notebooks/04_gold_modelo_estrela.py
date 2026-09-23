@@ -147,6 +147,12 @@ display(spark.table("combustiveis.gold.dim_posto").limit(10))
 # MAGIC Gerada como calendario continuo entre a primeira e a ultima coleta, e nao apenas com as datas
 # MAGIC presentes nos dados. Assim, uma consulta por mes mostra um mes sem coleta como zero, em vez de
 # MAGIC simplesmente omitir a linha e dar a impressao de que o mes nao existiu.
+# MAGIC
+# MAGIC A semana e identificada pela data da segunda-feira que a inicia (`semana_inicio`), e nao por um
+# MAGIC rotulo de ano e numero da semana. O rotulo textual tem um problema conhecido na virada do ano: a
+# MAGIC semana de 29/12/2025 a 04/01/2026 pertence a dois anos civis, e qualquer convencao de nome gera
+# MAGIC ambiguidade. Uma data nunca e ambigua, ordena corretamente e serve de chave de agrupamento na
+# MAGIC pergunta P5. O rotulo `ano_semana` continua disponivel apenas para leitura.
 
 # COMMAND ----------
 
@@ -162,7 +168,15 @@ dim_tempo = (
     .withColumn("mes", F.month("data"))
     .withColumn("dia", F.dayofmonth("data"))
     .withColumn("ano_mes", F.date_format("data", "yyyy-MM"))
-    .withColumn("ano_semana", F.date_format("data", "YYYY-ww"))
+    .withColumn("semana_inicio", F.date_sub(F.col("data"), F.expr("(dayofweek(data) + 5) % 7")))
+    .withColumn(
+        "ano_semana",
+        F.concat(
+            F.year("semana_inicio"),
+            F.lit("-S"),
+            F.lpad(F.weekofyear("semana_inicio").cast("string"), 2, "0"),
+        ),
+    )
     .withColumn("trimestre", F.quarter("data"))
     .withColumn("semestre", F.when(F.month("data") <= 6, F.lit(1)).otherwise(F.lit(2)))
     .withColumn("dia_semana", F.date_format("data", "EEEE"))
