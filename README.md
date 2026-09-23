@@ -559,6 +559,8 @@ Os cinco estados mais caros em diesel S10 são AC (7,848), AM (7,085), RR (7,055
 (6,771). Quatro deles são da região Norte. São Paulo, com a maior amostra do país, fica 1,14% abaixo
 da média nacional.
 
+![Estados mais caros e mais baratos, por combustível](docs/img/13_p2_estados.png)
+
 **Discussão.** Abastecer o mesmo caminhão no Acre custa 25% a mais do que em Sergipe. Para uma frota,
 isso responde duas coisas de uma vez. Primeiro, o reembolso não pode ser um valor único nacional: hoje
 ele ou remunera demais quem roda no Nordeste ou remunera de menos quem roda no Norte. Segundo, em rota
@@ -586,6 +588,8 @@ compensa.
 | DF | 4,679 | 6,410 | 0,7285 | Não compensa | 2 de 12 |
 
 Nos 20 estados restantes a razão ficou acima de 0,70 em todos os meses do período.
+
+![Razão entre o preço do etanol e o da gasolina, por estado](docs/img/14_p3_etanol.png)
 
 **Discussão.** A política de combustível para a frota flex é regional, não nacional. Em quatro estados
 o etanol compensou na média do ano, e todos eles são produtores de cana ou vizinhos imediatos das
@@ -615,6 +619,8 @@ Comparação feita dentro de cada estado, para a gasolina comum.
 
 Estados com a maior vantagem para a bandeira branca: MS (5,57%), SP (4,56%), PR (3,27%), PA (2,90%),
 AC (2,78%) e MT (2,34%).
+
+![Comparação entre postos bandeirados e de bandeira branca, por estado](docs/img/15_p4_bandeira.png)
 
 **Discussão.** No agregado, a diferença é pequena: 0,65% em média, menos de quatro centavos por litro.
 Essa resposta sozinha sugeriria que a decisão é indiferente. Mas a média nacional esconde o que
@@ -651,6 +657,8 @@ Municípios com maior dispersão média:
 | RJ | Rio de Janeiro | R$ 2,207 | 35,66% |
 | SP | Taboão da Serra | R$ 2,171 | 35,14% |
 | PE | Serra Talhada | R$ 1,683 | 26,61% |
+
+![Dispersão de preço dentro do mesmo município, na mesma semana](docs/img/16_p5_dispersao.png)
 
 **Discussão.** Escolher onde abastecer dentro da própria cidade vale mais do que parece. Na média, o
 posto mais barato do município está 22 centavos abaixo da média local, o que representa 3,53% do valor
