@@ -245,7 +245,7 @@ análise, ficou fora desta dimensão justamente por isso.
 
 Todas as 10 tabelas e as 83 colunas do projeto têm descrição gravada no Unity Catalog, por
 `COMMENT ON TABLE` e `COMMENT ON COLUMN`, no script
-[`notebooks/05_catalogo_dados.sql`](notebooks/05_catalogo_dados.sql). Uma consulta de verificação no
+[`notebooks/06_catalogo_dados.sql`](notebooks/06_catalogo_dados.sql). Uma consulta de verificação no
 `information_schema` confirma que não há coluna sem descrição.
 
 ![Catálogo com as descrições de tabelas e colunas gravadas no Unity Catalog](docs/img/05_catalogo_colunas.png)
@@ -372,7 +372,7 @@ brutos", acrescidas de `_arquivo_origem` e `_data_ingestao`.
 | Tabela | Conteúdo |
 |---|---|
 | `bronze.perfil_completude` | Nulos, vazios e percentual de ausência por coluna da bronze. Gerada pelo notebook 02 |
-| `silver.perfil_completude` | Mesma medição na silver. Gerada pelo notebook 06, para comparação |
+| `silver.perfil_completude` | Mesma medição na silver. Gerada pelo notebook 05, para comparação |
 | `silver.log_transformacoes` | Transformação, motivo e linhas afetadas por cada passo da silver. Gerada pelo notebook 03 |
 
 ## Pipeline de Dados (Etapa 4.4)
@@ -389,8 +389,8 @@ procurar cada transformação.
 | [`02_qualidade_bronze.py`](notebooks/02_qualidade_bronze.py) | Perfil de qualidade do dado bruto | `bronze.precos_anp` | `bronze.perfil_completude` |
 | [`03_silver_limpeza.py`](notebooks/03_silver_limpeza.py) | Tipagem, padronização e remoção de duplicatas | `bronze.precos_anp` | `silver.precos`, `silver.log_transformacoes` |
 | [`04_gold_modelo_estrela.py`](notebooks/04_gold_modelo_estrela.py) | Monta as dimensões e a fato | `silver.precos` | 5 tabelas em `gold` |
-| [`05_catalogo_dados.sql`](notebooks/05_catalogo_dados.sql) | Grava as descrições no Unity Catalog | — | Metadados |
-| [`06_qualidade_pos_pipeline.py`](notebooks/06_qualidade_pos_pipeline.py) | Repete as verificações nas tabelas finais | `silver`, `gold` | `silver.perfil_completude` |
+| [`05_qualidade_pos_pipeline.py`](notebooks/05_qualidade_pos_pipeline.py) | Repete as verificações nas tabelas finais | `silver`, `gold` | `silver.perfil_completude` |
+| [`06_catalogo_dados.sql`](notebooks/06_catalogo_dados.sql) | Grava as descrições no Unity Catalog e verifica se alguma coluna ficou sem documentação | — | Metadados |
 | [`07_analise_perguntas.py`](notebooks/07_analise_perguntas.py) | Responde às cinco perguntas | `gold` | Resultados |
 
 Todas as escritas usam modo `overwrite` e todos os comandos de criação usam `IF NOT EXISTS`. O pipeline
@@ -475,7 +475,7 @@ deixar rastro, e a próxima mudança de formato da fonte seria descoberta do mes
 ### Antes e depois
 
 Verificações repetidas nas tabelas finais, no notebook
-[`06_qualidade_pos_pipeline.py`](notebooks/06_qualidade_pos_pipeline.py).
+[`05_qualidade_pos_pipeline.py`](notebooks/05_qualidade_pos_pipeline.py).
 
 | Verificação | Bronze | Tabelas finais |
 |---|---|---|

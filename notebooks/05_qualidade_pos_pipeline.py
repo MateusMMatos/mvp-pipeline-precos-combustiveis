@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 06 - Qualidade depois do pipeline
+# MAGIC # 05 - Qualidade depois do pipeline
 # MAGIC
 # MAGIC Repete nas tabelas finais as mesmas verificacoes feitas na bronze, para mostrar o que o pipeline
 # MAGIC resolveu e o que permanece por decisao consciente.
@@ -56,7 +56,7 @@ perfil_silver.write.mode("overwrite").saveAsTable("combustiveis.silver.perfil_co
 
 spark.sql(
     "COMMENT ON TABLE combustiveis.silver.perfil_completude IS "
-    "'Perfil de completude da camada silver: ausentes e percentual por coluna. Gerado pelo notebook 06 "
+    "'Perfil de completude da camada silver: ausentes e percentual por coluna. Gerado pelo notebook 05 "
     "para comparacao com o perfil da bronze.'"
 )
 for coluna, descricao in [

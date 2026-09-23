@@ -1,6 +1,6 @@
 -- Databricks notebook source
 -- MAGIC %md
--- MAGIC # 05 - Catalogo de dados
+-- MAGIC # 06 - Catalogo de dados
 -- MAGIC
 -- MAGIC Grava a descricao de cada tabela e de cada coluna no Unity Catalog. O enunciado exige, para cada
 -- MAGIC campo: nome e descricao, tipo de dado, dominio de valores (minimo e maximo para numericos,
