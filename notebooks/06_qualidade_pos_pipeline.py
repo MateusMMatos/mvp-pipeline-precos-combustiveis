@@ -27,6 +27,11 @@ print(f"Linhas na silver: {total_silver}")
 # MAGIC ## Completude: antes e depois
 # MAGIC
 # MAGIC A comparacao usa a tabela de perfil gravada na etapa de qualidade da bronze.
+# MAGIC
+# MAGIC Quatro colunas mudaram de nome no caminho, e o mapeamento abaixo liga cada uma ao nome antigo,
+# MAGIC para que a comparacao fique alinhada em vez de mostrar dois lados soltos. As unicas colunas que
+# MAGIC aparecem em um lado so sao `valor_compra`, descartada por estar vazia, e `cnpj_digitos`, criada
+# MAGIC pelo pipeline.
 
 # COMMAND ----------
 
@@ -49,20 +54,41 @@ perfil_silver = spark.createDataFrame(
 
 perfil_silver.write.mode("overwrite").saveAsTable("combustiveis.silver.perfil_completude")
 
+spark.sql(
+    "COMMENT ON TABLE combustiveis.silver.perfil_completude IS "
+    "'Perfil de completude da camada silver: ausentes e percentual por coluna. Gerado pelo notebook 06 "
+    "para comparacao com o perfil da bronze.'"
+)
+for coluna, descricao in [
+    ("coluna", "Nome da coluna da tabela silver.precos analisada. Texto."),
+    ("ausentes_silver", "Quantidade de linhas sem valor na coluna, somando nulos e texto vazio. Inteiro."),
+    ("pct_silver", "Percentual de linhas sem valor na coluna. Decimal. Dominio: 0 a 100."),
+]:
+    spark.sql(
+        f"COMMENT ON COLUMN combustiveis.silver.perfil_completude.{coluna} IS '{descricao}'"
+    )
+
+# Colunas renomeadas no caminho da bronze para a silver
+renomeadas = {
+    "revenda": "razao_social",
+    "cnpj_revenda": "cnpj",
+    "nome_rua": "logradouro",
+    "numero_rua": "numero",
+}
+mapa = F.create_map(*[F.lit(x) for par in renomeadas.items() for x in par])
+
 comparacao = (
     spark.table("combustiveis.bronze.perfil_completude")
     .select(
         F.col("coluna").alias("coluna_bronze"),
+        F.coalesce(mapa[F.col("coluna")], F.col("coluna")).alias("chave"),
         (F.col("nulos") + F.col("vazios")).alias("ausentes_bronze"),
         F.col("pct_ausente").alias("pct_bronze"),
     )
-    .join(
-        perfil_silver,
-        F.col("coluna_bronze") == F.col("coluna"),
-        "full_outer",
-    )
+    .join(perfil_silver, F.col("chave") == F.col("coluna"), "full_outer")
     .select(
-        F.coalesce(F.col("coluna"), F.col("coluna_bronze")).alias("coluna"),
+        F.coalesce(F.col("coluna"), F.col("coluna_bronze")).alias("coluna_silver"),
+        F.col("coluna_bronze"),
         "ausentes_bronze",
         "pct_bronze",
         "ausentes_silver",
@@ -174,6 +200,10 @@ display(comparacao)
 # MAGIC Os precos extremos continuam na base. A consulta mostra onde eles estao: se estivessem concentrados
 # MAGIC em um unico posto ou em uma unica data, seriam suspeita de erro de digitacao. Espalhados por
 # MAGIC estados de custo logistico alto, sao diferenca regional legitima.
+# MAGIC
+# MAGIC A coluna decisiva e o percentual, nao a contagem. Sao Paulo tem muito mais postos pesquisados que
+# MAGIC os estados do Norte, entao aparece no topo de qualquer contagem absoluta sem que isso signifique
+# MAGIC preco alto. Ordenar pelo percentual dentro do proprio estado corrige essa distorcao.
 
 # COMMAND ----------
 
@@ -187,14 +217,16 @@ display(comparacao)
 # MAGIC   GROUP BY p.sk_produto
 # MAGIC )
 # MAGIC SELECT d.estado_sigla,
-# MAGIC        count(*) AS coletas_acima_do_p99,
-# MAGIC        round(avg(f.valor_venda), 3) AS preco_medio_dessas_coletas
+# MAGIC        count(*) AS coletas_de_gasolina,
+# MAGIC        sum(CASE WHEN f.valor_venda > l.p99 THEN 1 ELSE 0 END) AS acima_do_p99,
+# MAGIC        round(100.0 * sum(CASE WHEN f.valor_venda > l.p99 THEN 1 ELSE 0 END) / count(*), 2) AS pct_do_estado,
+# MAGIC        round(avg(f.valor_venda), 3) AS preco_medio_do_estado
 # MAGIC FROM combustiveis.gold.fato_preco_coleta f
 # MAGIC JOIN limites l ON l.sk_produto = f.sk_produto
 # MAGIC JOIN combustiveis.gold.dim_posto d ON d.sk_posto = f.sk_posto
-# MAGIC WHERE f.valor_venda > l.p99
 # MAGIC GROUP BY d.estado_sigla
-# MAGIC ORDER BY coletas_acima_do_p99 DESC
+# MAGIC HAVING sum(CASE WHEN f.valor_venda > l.p99 THEN 1 ELSE 0 END) > 0
+# MAGIC ORDER BY pct_do_estado DESC
 # MAGIC LIMIT 10;
 
 # COMMAND ----------

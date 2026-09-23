@@ -75,8 +75,18 @@ COMMENT ON COLUMN combustiveis.silver.precos._data_processamento_silver IS 'Meta
 COMMENT ON TABLE combustiveis.silver.log_transformacoes IS
 'Registro das transformacoes aplicadas na camada silver, com o motivo e o numero de linhas afetadas por cada uma. Gerado pelo notebook 03 a cada execucao.';
 
+COMMENT ON COLUMN combustiveis.silver.log_transformacoes.transformacao IS 'Nome da transformacao aplicada na camada silver. Texto. Dominio: as oito transformacoes do notebook 03.';
+COMMENT ON COLUMN combustiveis.silver.log_transformacoes.motivo IS 'Problema de qualidade que motivou a transformacao, conforme medido no notebook 02. Texto.';
+COMMENT ON COLUMN combustiveis.silver.log_transformacoes.linhas_afetadas IS 'Quantidade de linhas afetadas pela transformacao. Inteiro. Dominio observado: 6 a 806.626.';
+COMMENT ON COLUMN combustiveis.silver.log_transformacoes._data_execucao IS 'Metadado de controle: momento da execucao que gerou o registro.';
+
 COMMENT ON TABLE combustiveis.bronze.perfil_completude IS
 'Perfil de completude da camada bronze: nulos, vazios e percentual de ausencia por coluna. Gerado pelo notebook 02, serve de base de comparacao para a verificacao de qualidade apos o pipeline.';
+
+COMMENT ON COLUMN combustiveis.bronze.perfil_completude.coluna IS 'Nome da coluna da tabela bronze.precos_anp analisada. Texto. Dominio: as 16 colunas da fonte.';
+COMMENT ON COLUMN combustiveis.bronze.perfil_completude.nulos IS 'Quantidade de valores nulos na coluna. Inteiro. Dominio observado: 0 a 806.626.';
+COMMENT ON COLUMN combustiveis.bronze.perfil_completude.vazios IS 'Quantidade de valores preenchidos com texto vazio. Contada separadamente dos nulos porque arquivo CSV entrega campo ausente como texto vazio. Inteiro.';
+COMMENT ON COLUMN combustiveis.bronze.perfil_completude.pct_ausente IS 'Percentual de linhas sem valor na coluna, somando nulos e vazios. Decimal. Dominio: 0 a 100.';
 
 -- COMMAND ----------
 
