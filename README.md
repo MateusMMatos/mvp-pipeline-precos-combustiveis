@@ -252,6 +252,8 @@ Todas as 10 tabelas e as 83 colunas do projeto têm descrição gravada no Unity
 
 ![Verificação de colunas sem descrição, sem nenhuma linha no resultado](docs/img/06_catalogo_verificacao.png)
 
+![Descrição das dez tabelas do projeto, gravada no Unity Catalog](docs/img/17_catalogo_tabelas.png)
+
 ![Tabela aberta no Catalog Explorer, com as descrições visíveis](docs/img/07_catalog_explorer.png)
 
 Transcrição do catálogo. Os domínios referem-se ao período carregado, de julho de 2025 a junho de 2026.
