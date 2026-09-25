@@ -1,23 +1,22 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 01 - Camada bronze: ingestao dos arquivos da ANP
+# MAGIC # 01 - Camada bronze: ingestão dos arquivos da ANP
 # MAGIC
-# MAGIC Le os dois arquivos CSV que estao no volume e grava uma tabela Delta com o conteudo exatamente
-# MAGIC como veio da fonte. Nenhum valor e corrigido, convertido ou descartado nesta etapa.
+# MAGIC Lê os dois arquivos CSV do volume e grava uma tabela Delta com o conteúdo como veio da fonte, sem
+# MAGIC correção, conversão ou descarte de valores.
 # MAGIC
-# MAGIC Duas decisoes definem a camada bronze:
+# MAGIC Duas decisões definem esta camada:
 # MAGIC
-# MAGIC 1. Todas as colunas sao lidas como texto. O arquivo traz preco com virgula decimal e data em
-# MAGIC    dd/mm/aaaa; deixar o Spark adivinhar o tipo aqui faria a conversao acontecer sem registro e
-# MAGIC    descartaria em silencio o que nao coubesse no tipo escolhido. A tipagem e trabalho da camada
-# MAGIC    silver, onde fica documentada.
-# MAGIC 2. Cada linha recebe dois metadados de controle: o arquivo de origem e o momento da ingestao.
-# MAGIC    Sem isso, depois de unir os dois semestres nao ha como saber de qual arquivo veio um registro,
-# MAGIC    nem quando ele entrou.
+# MAGIC 1. Todas as colunas são lidas como texto. O arquivo traz preços com vírgula decimal e datas em
+# MAGIC    dd/mm/aaaa, e a inferência automática de tipos do Spark poderia converter ou descartar valores sem
+# MAGIC    deixar registro. A tipagem é feita na camada silver, onde fica documentada.
+# MAGIC 2. Cada linha recebe dois metadados de controle: o nome do arquivo de origem e o momento da ingestão.
+# MAGIC    Sem eles, depois de unir os dois semestres, não seria possível saber de qual arquivo veio cada
+# MAGIC    registro.
 # MAGIC
-# MAGIC Os nomes das colunas sao padronizados (sem espacos, acentos ou hifens) porque o cabecalho original
-# MAGIC traz nomes como "Regiao - Sigla" e um marcador BOM no inicio do arquivo, que nao servem como nome
-# MAGIC de coluna em tabela. Os valores permanecem intactos.
+# MAGIC Os nomes das colunas são padronizados (sem espaços, acentos ou hífens), porque o cabeçalho original
+# MAGIC usa nomes como "Regiao - Sigla" e tem um marcador BOM no início do arquivo. Os valores não são
+# MAGIC alterados.
 
 # COMMAND ----------
 
@@ -61,8 +60,9 @@ for a in arquivos:
 # MAGIC %md
 # MAGIC ## Leitura
 # MAGIC
-# MAGIC Cada arquivo e lido separadamente para que o nome da origem seja gravado em cada linha, e os
-# MAGIC resultados sao empilhados. Os dois semestres tem o mesmo cabecalho, conferido na etapa de busca.
+# MAGIC Cada arquivo é lido separadamente, para que o nome da origem seja gravado em suas linhas, e os
+# MAGIC resultados são unidos em seguida. Os dois semestres têm o mesmo cabeçalho, verificado na etapa de
+# MAGIC busca dos dados.
 
 # COMMAND ----------
 
@@ -90,9 +90,9 @@ for caminho in arquivos:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Gravacao da tabela Delta
+# MAGIC ## Gravação da tabela Delta
 # MAGIC
-# MAGIC A escrita usa overwrite para que o notebook possa ser reexecutado do zero sem duplicar dados.
+# MAGIC A gravação usa o modo overwrite, para que o notebook possa ser reexecutado sem duplicar dados.
 
 # COMMAND ----------
 
@@ -112,10 +112,10 @@ spark.sql(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Conferencia da carga
+# MAGIC ## Conferência da carga
 # MAGIC
-# MAGIC A contagem por arquivo tem que bater com a contagem feita nos CSVs antes do upload:
-# MAGIC 384.208 linhas no arquivo de 2025.02 e 422.418 no de 2026.01, totalizando 806.626.
+# MAGIC A contagem por arquivo deve coincidir com a contagem feita nos CSV antes do upload: 384.208 linhas no
+# MAGIC arquivo de 2025.02 e 422.418 no de 2026.01, com total de 806.626.
 
 # COMMAND ----------
 

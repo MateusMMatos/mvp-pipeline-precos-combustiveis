@@ -1,17 +1,16 @@
 -- Databricks notebook source
 -- MAGIC %md
--- MAGIC # 06 - Catalogo de dados
+-- MAGIC # 06 - Catálogo de dados
 -- MAGIC
--- MAGIC Grava a descricao de cada tabela e de cada coluna no Unity Catalog. O enunciado exige, para cada
--- MAGIC campo: nome e descricao, tipo de dado, dominio de valores (minimo e maximo para numericos,
--- MAGIC categorias possiveis para categoricos) e linhagem, isto e, de onde o dado veio e se houve
--- MAGIC transformacao ou juncao para compo-lo.
+-- MAGIC Grava a descrição de cada tabela e de cada coluna no Unity Catalog. O enunciado pede, para cada campo,
+-- MAGIC nome e descrição, tipo de dado, domínio de valores (mínimo e máximo para numéricos, categorias para
+-- MAGIC categóricos) e linhagem, isto é, a origem do dado e as transformações ou junções usadas para compô-lo.
 -- MAGIC
--- MAGIC O catalogo fica gravado na propria plataforma, e nao apenas em um documento a parte, por um motivo
--- MAGIC pratico: quem abre a tabela no Catalog Explorer ou escreve uma consulta ve a descricao ali, no
--- MAGIC momento em que precisa dela. Documentacao que mora longe do dado envelhece sem que ninguem perceba.
+-- MAGIC A documentação foi gravada na própria plataforma, e não apenas em um documento separado, para que a
+-- MAGIC descrição apareça no Catalog Explorer e fique disponível a quem consulta as tabelas.
 -- MAGIC
--- MAGIC Os dominios de valores citados referem-se ao periodo carregado: julho de 2025 a junho de 2026.
+-- MAGIC Os domínios citados referem-se ao período carregado, de julho de 2025 a junho de 2026. O texto das
+-- MAGIC descrições foi escrito sem acentuação, para evitar problemas de codificação entre ferramentas.
 
 -- COMMAND ----------
 
@@ -107,7 +106,7 @@ COMMENT ON COLUMN combustiveis.gold.fato_preco_coleta.valor_venda IS 'Medida: pr
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ## Camada gold: dimensoes
+-- MAGIC ## Camada gold: dimensões
 
 -- COMMAND ----------
 
@@ -160,10 +159,10 @@ COMMENT ON COLUMN combustiveis.gold.dim_tempo.dia_semana IS 'Nome do dia da sema
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ## Conferencia do catalogo
+-- MAGIC ## Conferência do catálogo
 -- MAGIC
--- MAGIC A consulta abaixo le os comentarios gravados no Unity Catalog. Serve de evidencia de que a
--- MAGIC documentacao esta na plataforma, e de fonte para a transcricao do catalogo no README.
+-- MAGIC A consulta a seguir lê os comentários gravados no Unity Catalog. Ela serve de evidência de que a
+-- MAGIC documentação está na plataforma e de fonte para a transcrição do catálogo no README.
 
 -- COMMAND ----------
 
@@ -179,7 +178,7 @@ ORDER BY table_schema, table_name, ordinal_position;
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC Colunas ainda sem descricao. O resultado esperado e vazio.
+-- MAGIC Colunas ainda sem descrição. O resultado esperado é vazio.
 
 -- COMMAND ----------
 
@@ -192,7 +191,7 @@ ORDER BY table_schema, table_name;
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC Descricao das tabelas.
+-- MAGIC Descrição das tabelas.
 
 -- COMMAND ----------
 

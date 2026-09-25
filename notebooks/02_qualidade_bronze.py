@@ -2,23 +2,22 @@
 # MAGIC %md
 # MAGIC # 02 - Perfil de qualidade da camada bronze
 # MAGIC
-# MAGIC Investiga o dado como ele chegou, antes de qualquer correcao. O enunciado pede essa verificacao
-# MAGIC "no processo inicial de captura", e a ordem importa: sao os problemas encontrados aqui que
-# MAGIC definem o que a camada silver precisa corrigir. Limpar antes de medir significa corrigir no
-# MAGIC escuro e nao ter como provar o que foi resolvido.
+# MAGIC Analisa os dados como chegaram, antes de qualquer correção. O enunciado pede essa verificação no
+# MAGIC processo inicial de captura, e são os problemas encontrados aqui que definem as transformações da
+# MAGIC camada silver. Medir antes de corrigir também permite demonstrar depois o que foi resolvido.
 # MAGIC
-# MAGIC As cinco dimensoes verificadas, uma secao para cada:
+# MAGIC Dimensões verificadas:
 # MAGIC
-# MAGIC | Dimensao | Pergunta |
+# MAGIC | Dimensão | Pergunta |
 # MAGIC |---|---|
-# MAGIC | Completude | Ha nulos ou vazios? Em que proporcao? |
-# MAGIC | Consistencia | Os valores seguem o formato esperado? |
-# MAGIC | Unicidade | Ha duplicatas onde nao deveria? |
-# MAGIC | Acuracia | Os valores fazem sentido no contexto? |
-# MAGIC | Outliers | Ha valores extremos que distorcem a analise? |
+# MAGIC | Completude | Há nulos ou vazios? Em que proporção? |
+# MAGIC | Consistência | Os valores seguem o formato esperado? |
+# MAGIC | Unicidade | Há duplicatas onde não deveria haver? |
+# MAGIC | Acurácia | Os valores fazem sentido no contexto? |
+# MAGIC | Outliers | Há valores extremos que distorcem a análise? |
 # MAGIC
-# MAGIC O resultado da completude fica gravado em uma tabela, para servir de comparacao depois que o
-# MAGIC pipeline rodar (etapa de qualidade pos-pipeline).
+# MAGIC O resultado da completude é gravado em uma tabela, usada depois na comparação com as tabelas finais
+# MAGIC (notebook 05).
 
 # COMMAND ----------
 
@@ -39,9 +38,9 @@ print(f"Colunas da fonte: {len(colunas_origem)}")
 # MAGIC %md
 # MAGIC ## 1. Completude
 # MAGIC
-# MAGIC Conta, para cada coluna, quantos valores estao nulos e quantos estao preenchidos com texto vazio.
-# MAGIC Os dois casos sao tratados separadamente de proposito: o CSV entrega campo ausente como texto
-# MAGIC vazio, nao como nulo, e quem so procura nulo conclui que a base esta completa.
+# MAGIC Conta, para cada coluna, os valores nulos e os preenchidos com texto vazio. Os dois casos são contados
+# MAGIC separadamente porque, em arquivos CSV, um campo ausente pode chegar como texto vazio, e não como
+# MAGIC nulo.
 
 # COMMAND ----------
 
@@ -69,9 +68,9 @@ display(perfil_completude)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Consistencia
+# MAGIC ## 2. Consistência
 # MAGIC
-# MAGIC Verifica se cada campo segue o formato que a documentacao da ANP descreve.
+# MAGIC Verifica se cada campo segue o formato descrito na documentação da ANP.
 
 # COMMAND ----------
 
@@ -88,8 +87,8 @@ display(perfil_completude)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Unidade de medida por produto. O GNV e vendido em metro cubico e os demais em litro, entao
-# MAGIC preco de GNV nao pode entrar na mesma media dos combustiveis liquidos.
+# MAGIC Unidade de medida por produto. O GNV é vendido em metro cúbico e os demais combustíveis em litro, por
+# MAGIC isso o preço do GNV não pode entrar na mesma média dos combustíveis líquidos.
 
 # COMMAND ----------
 
@@ -102,8 +101,8 @@ display(perfil_completude)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Bandeiras registradas. A lista mostra nomes proximos que precisam de decisao explicita
-# MAGIC (por exemplo, uma rede e a joint venture dela aparecem separadas).
+# MAGIC Bandeiras registradas. A lista inclui nomes próximos, como RAIZEN e RAIZEN MIME, que exigem uma
+# MAGIC decisão explícita sobre agrupamento.
 
 # COMMAND ----------
 
@@ -116,8 +115,9 @@ display(perfil_completude)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Nome de municipio nao e chave: o mesmo nome aparece em estados diferentes. A comparacao abaixo
-# MAGIC mostra por que a chave de localidade precisa ser o par estado mais municipio.
+# MAGIC O nome do município não serve como chave, porque o mesmo nome aparece em estados diferentes. A
+# MAGIC comparação a seguir mostra por que a localidade precisa ser identificada pelo par estado e
+# MAGIC município.
 
 # COMMAND ----------
 
@@ -142,8 +142,8 @@ display(perfil_completude)
 # MAGIC %md
 # MAGIC ## 3. Unicidade
 # MAGIC
-# MAGIC Duas verificacoes diferentes: linhas identicas repetidas, e repeticao da chave de negocio
-# MAGIC (um posto nao deveria ter dois precos do mesmo produto na mesma data de coleta).
+# MAGIC Duas verificações: linhas idênticas repetidas e repetição da chave de negócio (um posto não deveria
+# MAGIC ter dois preços do mesmo produto na mesma data de coleta).
 
 # COMMAND ----------
 
@@ -167,9 +167,9 @@ print(f"Repeticoes da chave (cnpj, produto, data): {duplicatas_chave}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Um posto pode aparecer com mais de uma bandeira ao longo do periodo. Isso nao e erro: o posto
-# MAGIC trocou de distribuidora. Mas tem consequencia na modelagem, porque a bandeira deixa de ser um
-# MAGIC atributo fixo do posto e passa a valer para a data da coleta.
+# MAGIC Um posto pode aparecer com mais de uma bandeira ao longo do período quando troca de distribuidora.
+# MAGIC Isso não é um erro, mas afeta a modelagem: a bandeira deixa de ser um atributo fixo do posto e passa a
+# MAGIC valer para a data da coleta.
 
 # COMMAND ----------
 
@@ -185,10 +185,10 @@ print(f"Repeticoes da chave (cnpj, produto, data): {duplicatas_chave}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Acuracia
+# MAGIC ## 4. Acurácia
 # MAGIC
-# MAGIC Os precos fazem sentido para o mercado brasileiro no periodo? A conversao para numero aqui e
-# MAGIC apenas para medir; nada e gravado. A tipagem definitiva acontece na camada silver.
+# MAGIC Verifica se os preços são plausíveis para o mercado brasileiro no período. A conversão para número
+# MAGIC serve apenas para a medição e não é gravada; a tipagem definitiva é feita na camada silver.
 
 # COMMAND ----------
 
@@ -207,7 +207,7 @@ print(f"Repeticoes da chave (cnpj, produto, data): {duplicatas_chave}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Cobertura temporal: as coletas precisam cobrir os doze meses do recorte, sem mes faltando.
+# MAGIC Cobertura temporal: as coletas precisam cobrir os doze meses do recorte, sem meses faltando.
 
 # COMMAND ----------
 
@@ -224,9 +224,9 @@ print(f"Repeticoes da chave (cnpj, produto, data): {duplicatas_chave}")
 # MAGIC %md
 # MAGIC ## 5. Outliers
 # MAGIC
-# MAGIC Marca os precos fora do intervalo entre o primeiro e o nonagesimo nono percentil de cada produto.
-# MAGIC Extremo nao e sinonimo de errado: posto de rodovia em regiao remota cobra mais mesmo. Por isso o
-# MAGIC objetivo aqui e localizar e dimensionar, nao excluir.
+# MAGIC Identifica os preços fora do intervalo entre o percentil 1 e o percentil 99 de cada produto. Valores
+# MAGIC extremos não são necessariamente erros, já que postos em regiões remotas tendem a cobrar mais; o
+# MAGIC objetivo aqui é localizar e dimensionar esses valores, e não excluí-los.
 
 # COMMAND ----------
 
@@ -254,21 +254,22 @@ print(f"Repeticoes da chave (cnpj, produto, data): {duplicatas_chave}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Resumo dos problemas e decisao de tratamento
+# MAGIC ## Resumo dos problemas e decisão de tratamento
 # MAGIC
-# MAGIC Cada problema encontrado acima vira uma transformacao na camada silver ou uma decisao de modelagem.
-# MAGIC Os numeros exatos estao nos resultados das celulas; esta tabela registra o que sera feito com cada um.
+# MAGIC Cada problema encontrado corresponde a uma transformação na camada silver ou a uma decisão de
+# MAGIC modelagem. Os números estão nos resultados das células anteriores; a tabela registra o tratamento
+# MAGIC previsto para cada um.
 # MAGIC
-# MAGIC | Problema | Dimensao | Tratamento na silver |
+# MAGIC | Problema | Dimensão | Tratamento |
 # MAGIC |---|---|---|
-# MAGIC | `valor_compra` inteiramente ausente (a ANP descontinuou a coleta em agosto de 2020) | Completude | Coluna descartada, com o motivo registrado no catalogo. Manter coluna vazia induz a erro |
-# MAGIC | `complemento` ausente na maior parte das linhas | Completude | Mantida como esta: complemento opcional em endereco nao e defeito |
-# MAGIC | Preco como texto com virgula decimal | Consistencia | Convertido para decimal |
-# MAGIC | Data como texto em dd/mm/aaaa | Consistencia | Convertida para date |
-# MAGIC | CNPJ com espaco a esquerda e com mascara | Consistencia | Espaco removido; mascara mantida para leitura humana e uma versao so com digitos usada como chave |
-# MAGIC | `numero_rua` com S/N, SN, S N e variantes | Consistencia | Padronizado como S/N quando nao for numero |
-# MAGIC | GNV medido em metro cubico | Consistencia | Unidade preservada e sinalizada; comparacoes de preco separam GNV dos liquidos |
-# MAGIC | Linhas duplicadas exatas | Unicidade | Removidas |
-# MAGIC | Mesmo nome de municipio em estados diferentes | Chave | Chave de localidade formada pelo par estado e municipio |
-# MAGIC | Posto com mais de uma bandeira no periodo | Modelagem | Bandeira tratada como atributo da coleta, nao do posto |
-# MAGIC | Precos extremos | Outliers | Mantidos, com o intervalo documentado. Excluir sem motivo apaga diferenca regional real |
+# MAGIC | `valor_compra` sem nenhum valor (coleta encerrada pela ANP em agosto de 2020) | Completude | Coluna descartada, com o motivo registrado no catálogo |
+# MAGIC | `complemento` ausente na maior parte das linhas | Completude | Mantida, por ser um campo opcional do endereço |
+# MAGIC | Preço como texto com vírgula decimal | Consistência | Conversão para decimal |
+# MAGIC | Data como texto em dd/mm/aaaa | Consistência | Conversão para date |
+# MAGIC | CNPJ com espaço à esquerda e com máscara | Consistência | Remoção do espaço; máscara mantida para leitura e versão apenas com dígitos usada como chave |
+# MAGIC | `numero_rua` com S/N, SN, S N e variantes | Consistência | Padronização como S/N quando não for número |
+# MAGIC | GNV medido em metro cúbico | Consistência | Unidade preservada; as comparações de preço separam o GNV dos líquidos |
+# MAGIC | Linhas duplicadas exatas | Unicidade | Remoção |
+# MAGIC | Mesmo nome de município em estados diferentes | Chave | Localidade identificada pelo par estado e município |
+# MAGIC | Posto com mais de uma bandeira no período | Modelagem | Bandeira tratada como atributo da coleta, e não do posto |
+# MAGIC | Preços extremos | Outliers | Mantidos, com o intervalo documentado, por representarem diferenças regionais |

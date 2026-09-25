@@ -1,40 +1,40 @@
 # Modelagem da camada gold
 
-Documento de desenho do modelo dimensional. Define o que cada tabela representa antes de o pipeline
-ser escrito, porque são as tabelas de destino que determinam quais transformações a camada silver
-precisa fazer.
+Este documento descreve o modelo dimensional adotado no projeto. Ele foi elaborado antes da
+implementação das camadas silver e gold, porque as tabelas de destino determinam quais
+transformações a silver precisa fazer.
 
 ## Modelo escolhido: esquema estrela
 
-A fonte entrega um arquivo plano, com uma linha por preço coletado e o contexto repetido em todas as
-linhas: o endereço do posto aparece de novo a cada coleta, o nome do município a cada linha, e assim
-por diante. Em 806.626 linhas, isso significa repetir o endereço de 7.963 postos dezenas de vezes.
+A fonte é um arquivo plano, com uma linha por preço coletado e o contexto repetido em todas as
+linhas: o endereço do posto e o nome do município, por exemplo, aparecem novamente a cada coleta.
+Nas 806.626 linhas carregadas, o endereço de cada posto se repete dezenas de vezes.
 
-O esquema estrela separa o que é evento do que é contexto: uma tabela de fatos no centro, com as
-medidas e as chaves, e tabelas de dimensão ao redor, com os atributos descritivos. Foi o modelo
+No esquema estrela, os eventos ficam em uma tabela de fatos central, com as medidas e as chaves, e o
+contexto fica em tabelas de dimensão, com os atributos descritivos (KIMBALL; ROSS, 2013). O modelo foi
 escolhido por três motivos:
 
-1. As perguntas do objetivo são todas do tipo "média de preço por alguma coisa" (por mês, por estado,
-   por bandeira, por município). Esse é exatamente o padrão que o esquema estrela otimiza.
-2. O contexto deixa de ser repetido. Os atributos de cada posto ficam gravados uma vez.
-3. Corrigir um atributo passa a ser uma operação em um lugar só. No arquivo plano, corrigir o nome de
-   um posto significa alterar todas as linhas dele.
+1. Todas as perguntas do objetivo envolvem médias de preço agrupadas por algum atributo (mês, estado,
+   bandeira, município), que é o tipo de consulta para o qual o esquema estrela é indicado.
+2. Os atributos de cada posto passam a ser gravados uma única vez.
+3. A correção de um atributo passa a ser feita em um único registro. No arquivo plano, corrigir o
+   nome de um posto exigiria alterar todas as linhas dele.
 
-O esquema snowflake foi descartado: normalizar município em uma tabela e estado em outra reduziria
-ainda mais a redundância, mas acrescentaria junções a cada consulta sem ganho prático nesta escala.
-O modelo plano foi descartado porque é o que a fonte já entrega, e mantê-lo não demonstraria modelagem.
+O esquema snowflake foi descartado. Separar município e estado em tabelas próprias reduziria a
+redundância, mas acrescentaria junções a todas as consultas sem ganho prático nesse volume de dados.
+O modelo plano também foi descartado, por ser o formato que a fonte já entrega.
 
 ## Grão da tabela de fatos
 
-Uma linha da `fato_preco_coleta` representa **o preço de um combustível, em um posto, em uma data de
-coleta**.
+Cada linha da `fato_preco_coleta` representa o preço de um combustível, em um posto, em uma data de
+coleta.
 
-O grão é a decisão mais importante do modelo, porque define o que pode ser respondido. Ao guardar a
-coleta individual, qualquer agregação continua possível: semana, mês, município, estado, bandeira.
-Se a fato já nascesse agregada por mês e estado, a pergunta P5, que compara postos dentro do mesmo
-município na mesma semana, ficaria sem resposta, e não haveria como voltar atrás sem reprocessar.
+A definição do grão é a decisão central do modelo, porque determina o que pode ser respondido.
+Mantendo a coleta individual, todas as agregações continuam possíveis: semana, mês, município, estado
+e bandeira. Se a fato fosse gravada já agregada por mês e estado, a P5, que compara postos do mesmo
+município na mesma semana, não poderia ser respondida sem reprocessar os dados.
 
-Medida da fato: `valor_venda`, o preço ao consumidor.
+A medida da fato é `valor_venda`, o preço ao consumidor.
 
 ## Tabelas
 
@@ -59,8 +59,8 @@ Medida da fato: `valor_venda`, o preço ao consumidor.
 | logradouro, numero, complemento, bairro, cep | string | Endereço |
 | municipio, estado_sigla, regiao_sigla | string | Localização |
 
-A localização fica na própria dimensão do posto, desnormalizada. É o que caracteriza a estrela:
-consultas por estado ou por município não precisam de uma junção extra.
+A localização fica na própria dimensão de posto, de forma desnormalizada, o que caracteriza o esquema
+estrela: consultas por estado ou por município não exigem junção adicional.
 
 ### dim_produto
 
@@ -72,9 +72,9 @@ consultas por estado ou por município não precisam de uma junção extra.
 | grupo_combustivel | string | GASOLINA, ETANOL, DIESEL ou GNV |
 | comparavel_por_litro | boolean | Falso para o GNV, cuja unidade é metro cúbico |
 
-A coluna `comparavel_por_litro` existe por causa de um problema encontrado no perfil de qualidade: o
-GNV é medido em metro cúbico. Sem essa marcação, uma média de preço por estado misturaria unidades
-diferentes e produziria um número sem significado.
+A coluna `comparavel_por_litro` foi criada a partir de um problema identificado no perfil de
+qualidade: o GNV é medido em metro cúbico. Sem essa indicação, uma média de preço por estado
+misturaria unidades diferentes.
 
 ### dim_bandeira
 
@@ -84,12 +84,13 @@ diferentes e produziria um número sem significado.
 | bandeira | string | Marca exibida pelo posto, ou BRANCA |
 | tipo_bandeira | string | BANDEIRADO ou BRANCA |
 
-A chave da bandeira fica na tabela de fatos, não na dimensão do posto. O perfil de qualidade mostrou
-359 postos que exibiram mais de uma bandeira durante os doze meses, o que não é erro: o posto trocou
-de distribuidora. Se a bandeira fosse atributo fixo do posto, todo o histórico dele passaria a
-aparecer sob a bandeira mais recente, e a pergunta P4 seria respondida com dados errados.
+A chave da bandeira fica na tabela de fatos, e não na dimensão de posto. O perfil de qualidade mostrou
+359 postos com mais de uma bandeira nos doze meses, resultado de troca de distribuidora. Se a bandeira
+fosse um atributo fixo do posto, todo o histórico apareceria sob a marca mais recente, e a P4 seria
+respondida com dados incorretos.
 
-A coluna `tipo_bandeira` resolve a P4 diretamente, separando postos de marca dos de bandeira branca.
+A coluna `tipo_bandeira` separa os postos bandeirados dos postos de bandeira branca e é usada
+diretamente na P4.
 
 ### dim_tempo
 
@@ -98,17 +99,17 @@ A coluna `tipo_bandeira` resolve a P4 diretamente, separando postos de marca dos
 | data | date | Chave da dimensão |
 | ano, mes, dia | int | Componentes da data |
 | ano_mes | string | Formato aaaa-mm, usado nas séries mensais |
-| semana_inicio | date | Segunda-feira que inicia a semana; é a chave de agrupamento semanal da P5 |
-| ano_semana | string | Rótulo legível da semana (aaaa-Snn), apenas para leitura |
-| trimestre, semestre | int | Agregações mais largas |
+| semana_inicio | date | Segunda-feira em que a semana começa; chave de agrupamento semanal da P5 |
+| ano_semana | string | Rótulo da semana (aaaa-Snn), apenas para leitura |
+| trimestre, semestre | int | Agregações de período mais longo |
 | dia_semana | string | Nome do dia |
 
-Uma dimensão de tempo evita repetir extração de partes da data em cada consulta e padroniza o que é
-"mês" e o que é "semana" em todas as análises.
+A dimensão de tempo padroniza a definição de mês e de semana em todas as análises e evita repetir o
+cálculo das partes da data em cada consulta.
 
-A semana é identificada pela data da segunda-feira que a inicia, e não por um rótulo do tipo
-ano mais número da semana. Na virada do ano, a mesma semana pertence a dois anos civis e qualquer
-convenção de nome fica ambígua; uma data não fica.
+A semana é identificada pela data da segunda-feira em que começa, e não por um rótulo de ano e número
+da semana. Na virada do ano, uma mesma semana pode pertencer a dois anos civis, e o rótulo fica
+ambíguo; a data não tem esse problema.
 
 ## Diagrama
 
@@ -158,15 +159,15 @@ erDiagram
 ## Chaves substitutas
 
 Cada dimensão tem uma chave própria, numérica e sequencial, em vez de usar o CNPJ ou o nome do produto
-como chave da fato. Três motivos:
+como chave na tabela de fatos. Os motivos são:
 
-1. A chave natural pode mudar. Um posto pode ter a razão social alterada; o nome de um produto pode ser
-   reescrito pela fonte. A chave substituta isola a fato dessas mudanças.
-2. Chave numérica ocupa menos espaço e faz junção mais rápido que texto.
-3. É o padrão de data warehouse, o que torna o modelo legível para quem já trabalha com o assunto.
+1. A chave natural pode mudar: um posto pode ter a razão social alterada, e a fonte pode reescrever o
+   nome de um produto. A chave substituta protege a fato dessas mudanças.
+2. Chaves numéricas ocupam menos espaço e tornam as junções mais eficientes do que chaves de texto.
+3. É a prática usual em data warehouse (KIMBALL; ROSS, 2013), o que facilita a leitura do modelo.
 
-A chave natural continua gravada na dimensão, para rastreabilidade: `cnpj_digitos` em dim_posto e o
-nome do produto em dim_produto.
+A chave natural continua gravada na dimensão para rastreabilidade: `cnpj_digitos` na dim_posto e o
+nome do produto na dim_produto.
 
 ## Como cada pergunta é respondida
 
@@ -175,23 +176,28 @@ nome do produto em dim_produto.
 | P1 - evolução mensal do preço por combustível | fato, dim_produto, dim_tempo | Média de `valor_venda` por `ano_mes` e produto |
 | P2 - estados mais caros e mais baratos | fato, dim_posto, dim_produto | Média por `estado_sigla`, filtrando gasolina comum e diesel S10 |
 | P3 - onde o etanol compensa | fato, dim_posto, dim_produto, dim_tempo | Razão entre a média do etanol e a da gasolina, por estado e por mês, comparada ao limite de 70% |
-| P4 - bandeirado contra bandeira branca | fato, dim_bandeira, dim_posto, dim_produto | Média por `tipo_bandeira`, comparada dentro do mesmo estado para não confundir marca com região |
-| P5 - dispersão dentro do município | fato, dim_posto, dim_tempo, dim_produto | Mínimo e máximo por município, semana e produto, com um mínimo de postos por grupo |
+| P4 - bandeirado contra bandeira branca | fato, dim_bandeira, dim_posto, dim_produto | Média por `tipo_bandeira`, comparada dentro do mesmo estado |
+| P5 - dispersão dentro do município | fato, dim_posto, dim_tempo, dim_produto | Mínimo e máximo por município, semana e produto, com um número mínimo de postos por grupo |
 
-A P4 tem uma armadilha registrada aqui de propósito: comparar a média geral de bandeirados com a de
-bandeira branca confunde o efeito da marca com o da região, porque a distribuição dos dois tipos não é
-igual entre os estados. A comparação precisa ser feita dentro do mesmo estado.
+No caso da P4, comparar a média nacional dos postos bandeirados com a dos postos de bandeira branca
+misturaria o efeito da marca com o efeito regional, porque os dois tipos de posto não estão
+distribuídos igualmente entre os estados. Por isso a comparação é feita dentro de cada estado.
 
-## O que a silver precisa entregar para este modelo funcionar
+## Transformações necessárias para este modelo
 
-| Transformação | Motivo |
-|---|---|
-| Converter preço para decimal, tratando vírgula decimal, uma ou duas casas e valores inteiros sem vírgula | Medida da fato |
-| Converter data para tipo date | Chave da dim_tempo |
-| Remover o espaço à esquerda do CNPJ e gerar a versão só com dígitos | Chave natural de dim_posto |
-| Padronizar a unidade do GNV, publicada com duas grafias | Atributo de dim_produto |
-| Classificar produto em grupo e marcar o que é comparável por litro | Atributos de dim_produto |
-| Classificar bandeira em BANDEIRADO ou BRANCA | Atributo de dim_bandeira |
-| Remover as linhas duplicadas exatas | Integridade da fato |
-| Padronizar o número do logradouro quando não for numérico | Atributo de dim_posto |
-| Descartar `valor_compra` | Coluna inteiramente vazia desde 2020 |
+| Transformação | Camada | Motivo |
+|---|---|---|
+| Converter o preço para decimal, tratando vírgula decimal, uma ou duas casas e valores inteiros sem vírgula | silver | Medida da fato |
+| Converter a data para o tipo date | silver | Chave da dim_tempo |
+| Remover o espaço à esquerda do CNPJ e gerar a versão apenas com dígitos | silver | Chave natural da dim_posto |
+| Padronizar a unidade do GNV, publicada com duas grafias | silver | Atributo da dim_produto |
+| Remover as linhas duplicadas exatas | silver | Integridade da fato |
+| Padronizar o número do logradouro quando não for numérico | silver | Atributo da dim_posto |
+| Descartar `valor_compra` | silver | Coluna inteiramente vazia desde 2020 |
+| Classificar o produto em grupo e indicar o que é comparável por litro | gold | Atributos da dim_produto |
+| Classificar a bandeira em BANDEIRADO ou BRANCA | gold | Atributo da dim_bandeira |
+
+## Referência
+
+KIMBALL, Ralph; ROSS, Margy. **The data warehouse toolkit**: the definitive guide to dimensional
+modeling. 3. ed. Indianapolis: Wiley, 2013.

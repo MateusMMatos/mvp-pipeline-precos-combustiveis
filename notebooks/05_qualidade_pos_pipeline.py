@@ -2,16 +2,14 @@
 # MAGIC %md
 # MAGIC # 05 - Qualidade depois do pipeline
 # MAGIC
-# MAGIC Repete nas tabelas finais as mesmas verificacoes feitas na bronze, para mostrar o que o pipeline
-# MAGIC resolveu e o que permanece por decisao consciente.
+# MAGIC Repete nas tabelas finais as verificações feitas na bronze, para mostrar o que o pipeline resolveu e o
+# MAGIC que foi mantido por decisão.
 # MAGIC
-# MAGIC Medir so no inicio prova que havia problema; medir so no fim prova que esta limpo. A comparacao
-# MAGIC entre os dois momentos e o que demonstra o efeito do pipeline, e e ela que responde ao criterio de
-# MAGIC qualidade do enunciado: problemas detectados e como foram considerados na modelagem e no pipeline.
+# MAGIC A comparação entre as duas medições atende ao critério de qualidade do enunciado, que pede os
+# MAGIC problemas detectados e a forma como foram tratados na modelagem e no pipeline.
 # MAGIC
-# MAGIC Nem todo problema deve desaparecer. Ausencia de complemento em endereco e normal, e preco extremo
-# MAGIC em posto de rodovia no interior e informacao legitima. Apagar isso deixaria a base bonita e a
-# MAGIC analise errada.
+# MAGIC Nem todo problema deve desaparecer. A ausência de complemento no endereço é esperada, e preços
+# MAGIC extremos em postos de regiões remotas são informação legítima; removê-los distorceria a análise.
 
 # COMMAND ----------
 
@@ -26,12 +24,11 @@ print(f"Linhas na silver: {total_silver}")
 # MAGIC %md
 # MAGIC ## Completude: antes e depois
 # MAGIC
-# MAGIC A comparacao usa a tabela de perfil gravada na etapa de qualidade da bronze.
+# MAGIC A comparação usa a tabela de perfil gravada no notebook 02.
 # MAGIC
-# MAGIC Quatro colunas mudaram de nome no caminho, e o mapeamento abaixo liga cada uma ao nome antigo,
-# MAGIC para que a comparacao fique alinhada em vez de mostrar dois lados soltos. As unicas colunas que
-# MAGIC aparecem em um lado so sao `valor_compra`, descartada por estar vazia, e `cnpj_digitos`, criada
-# MAGIC pelo pipeline.
+# MAGIC Quatro colunas mudaram de nome entre a bronze e a silver, e o mapeamento abaixo relaciona cada uma ao
+# MAGIC nome anterior para alinhar a comparação. Aparecem em apenas um dos lados `valor_compra`, descartada
+# MAGIC por estar vazia, e `cnpj_digitos`, criada no pipeline.
 
 # COMMAND ----------
 
@@ -102,14 +99,12 @@ display(comparacao)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC A coluna `valor_compra` aparece apenas do lado da bronze porque foi descartada, e `cnpj_digitos`
-# MAGIC apenas do lado da silver porque foi criada no pipeline. A ausencia de complemento permanece, por
-# MAGIC ser caracteristica do dado e nao defeito.
+# MAGIC A ausência de complemento permanece, por ser uma característica do dado, e não um defeito.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Consistencia: antes e depois
+# MAGIC ## Consistência: antes e depois
 # MAGIC
 # MAGIC Os mesmos testes de formato do notebook 02, agora sobre os tipos corretos.
 
@@ -129,9 +124,9 @@ display(comparacao)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Resultado esperado: zero em todas as colunas de erro, duas unidades de medida (litro e metro
-# MAGIC cubico) e uma unica forma para sem numero. Na bronze esses mesmos testes apontavam 253 precos fora
-# MAGIC do padrao, 422.418 CNPJ com espaco, tres grafias de unidade e quatro formas de sem numero.
+# MAGIC Resultado esperado: zero nas colunas de erro, duas unidades de medida (litro e metro cúbico) e uma
+# MAGIC única forma para "sem número". Na bronze, os mesmos testes apontavam 253 preços fora do padrão,
+# MAGIC 422.418 CNPJ com espaço, três grafias de unidade e quatro formas de "sem número".
 
 # COMMAND ----------
 
@@ -151,9 +146,8 @@ display(comparacao)
 # MAGIC %md
 # MAGIC ## Integridade do modelo estrela
 # MAGIC
-# MAGIC Verifica se toda chave da fato encontra a sua dimensao. Em um modelo dimensional, chave orfa e o
-# MAGIC defeito mais caro: a consulta nao falha, ela simplesmente deixa linhas de fora e devolve um numero
-# MAGIC menor, que parece plausivel.
+# MAGIC Verifica se toda chave da fato encontra a sua dimensão. Uma chave sem correspondência não gera erro na
+# MAGIC consulta: as linhas afetadas são descartadas nas junções e o resultado sai menor, sem nenhum aviso.
 
 # COMMAND ----------
 
@@ -175,10 +169,9 @@ display(comparacao)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Conservacao do volume ao longo do pipeline
+# MAGIC ## Conservação do volume ao longo do pipeline
 # MAGIC
-# MAGIC Cada camada precisa explicar a diferenca de linhas em relacao a anterior. Diferenca sem explicacao
-# MAGIC e perda de dado.
+# MAGIC Cada camada deve explicar a diferença de linhas em relação à anterior.
 
 # COMMAND ----------
 
@@ -197,13 +190,13 @@ display(comparacao)
 # MAGIC %md
 # MAGIC ## Outliers mantidos
 # MAGIC
-# MAGIC Os precos extremos continuam na base. A consulta mostra onde eles estao: se estivessem concentrados
-# MAGIC em um unico posto ou em uma unica data, seriam suspeita de erro de digitacao. Espalhados por
-# MAGIC estados de custo logistico alto, sao diferenca regional legitima.
+# MAGIC Os preços extremos continuam na base. A consulta mostra em que estados eles se concentram: se
+# MAGIC estivessem em um único posto ou em uma única data, poderiam indicar erro de digitação; distribuídos
+# MAGIC por estados com custo logístico alto, indicam diferença regional de preço.
 # MAGIC
-# MAGIC A coluna decisiva e o percentual, nao a contagem. Sao Paulo tem muito mais postos pesquisados que
-# MAGIC os estados do Norte, entao aparece no topo de qualquer contagem absoluta sem que isso signifique
-# MAGIC preco alto. Ordenar pelo percentual dentro do proprio estado corrige essa distorcao.
+# MAGIC A ordenação é feita pelo percentual dentro de cada estado, e não pela contagem. São Paulo tem muito
+# MAGIC mais postos pesquisados que os estados do Norte e apareceria no topo de qualquer contagem absoluta,
+# MAGIC sem que isso significasse preço alto.
 
 # COMMAND ----------
 
@@ -234,16 +227,16 @@ display(comparacao)
 # MAGIC %md
 # MAGIC ## Resumo
 # MAGIC
-# MAGIC | Problema detectado na bronze | Situacao nas tabelas finais |
+# MAGIC | Problema detectado na bronze | Situação nas tabelas finais |
 # MAGIC |---|---|
-# MAGIC | `valor_compra` inteiramente vazia | Resolvido: coluna descartada, motivo no catalogo |
-# MAGIC | Preco como texto, em tres formatos diferentes | Resolvido: decimal(6,3), nenhuma conversao perdida |
+# MAGIC | `valor_compra` inteiramente vazia | Resolvido: coluna descartada, com o motivo registrado no catálogo |
+# MAGIC | Preço como texto, em três formatos | Resolvido: decimal(6,3), sem conversões perdidas |
 # MAGIC | Data como texto | Resolvido: tipo date |
-# MAGIC | CNPJ com espaco a esquerda em um dos arquivos | Resolvido, com chave natural so de digitos |
-# MAGIC | Duas grafias para a unidade do GNV | Resolvido: uma unica grafia |
-# MAGIC | Quatro formas de "sem numero" | Resolvido: forma unica S/N |
+# MAGIC | CNPJ com espaço à esquerda em um dos arquivos | Resolvido, com chave natural apenas com dígitos |
+# MAGIC | Duas grafias para a unidade do GNV | Resolvido: grafia única |
+# MAGIC | Quatro formas de "sem número" | Resolvido: forma única S/N |
 # MAGIC | 6 linhas duplicadas | Resolvido: removidas |
-# MAGIC | Nome de municipio repetido entre estados | Tratado na modelagem: localidade sempre por estado e municipio |
-# MAGIC | Posto com mais de uma bandeira no periodo | Tratado na modelagem: bandeira na fato, referente a data da coleta |
-# MAGIC | Complemento de endereco ausente | Mantido: caracteristica do dado, nao defeito |
-# MAGIC | Precos extremos | Mantidos: diferenca regional real, com intervalo documentado |
+# MAGIC | Nome de município repetido entre estados | Tratado na modelagem: localidade sempre por estado e município |
+# MAGIC | Posto com mais de uma bandeira no período | Tratado na modelagem: bandeira na fato, referente à data da coleta |
+# MAGIC | Complemento de endereço ausente | Mantido: característica do dado |
+# MAGIC | Preços extremos | Mantidos: diferença regional, com o intervalo documentado |

@@ -1,21 +1,23 @@
 # MVP de Engenharia de Dados: preços de combustíveis para uma política de abastecimento de frota
 
-Pipeline de dados de ponta a ponta construído no Databricks sobre a Série Histórica de Preços de
-Combustíveis da ANP. O fluxo vai do arquivo bruto publicado pela agência até as tabelas de um esquema
-estrela usadas para responder às perguntas de negócio listadas abaixo.
+Projeto final (MVP) da Sprint 3, Engenharia de Dados, da Pós-Graduação em Ciência de Dados e
+Analytics. Trabalho individual.
 
-Sprint 3 (Engenharia de Dados) da pós-graduação em Ciência de Dados e Analytics. Trabalho individual.
+O projeto consiste em um pipeline de dados construído no Databricks sobre a Série Histórica de Preços
+de Combustíveis da ANP. O fluxo parte dos arquivos publicados pela agência, passa pelas camadas
+bronze, silver e gold da arquitetura medalhão e termina em um modelo estrela, usado para responder a
+cinco perguntas de negócio.
 
 ## Contexto de Negócios e Perguntas (Etapa 2 e 4.1)
 
 ### Problema
 
-Uma empresa com frota própria, formada por carros de vendedores externos e caminhões de entrega, não
-tem critério de abastecimento. Cada motorista escolhe o posto e o combustível, e o reembolso é igual
-em todo o país. Combustível é o segundo maior custo da operação, atrás apenas de pessoal.
-
-A área de Compras precisa decidir, com base em dados, onde abastecer, com qual combustível e em que
-tipo de posto, além de revisar o valor de reembolso por estado e projetar o orçamento do próximo ano.
+O cenário considerado é o de uma empresa com frota própria, composta por carros de vendedores
+externos e caminhões de entrega, que não tem critério definido de abastecimento. Cada motorista
+escolhe o posto e o combustível, e o valor de reembolso é o mesmo em todo o país. Como o combustível
+é um dos principais custos da operação, a área de Compras precisa de dados para decidir onde
+abastecer, com qual combustível e em que tipo de posto, além de revisar o reembolso por estado e
+projetar o orçamento do ano seguinte.
 
 ### Perguntas
 
@@ -27,21 +29,23 @@ tipo de posto, além de revisar o valor de reembolso por estado e projetar o or�
 | P4 | Postos bandeirados cobram mais que postos de bandeira branca? Qual a diferença, e ela se mantém em todas as regiões? | Autorizar ou não o abastecimento em bandeira branca |
 | P5 | Dentro do mesmo município e na mesma semana, qual a diferença entre o posto mais barato e o mais caro? Em quais municípios essa dispersão é maior? | Onde vale negociar convênio com postos |
 
-A referência de 70% na P3 vem do rendimento do etanol, que entrega cerca de 70% do que a gasolina
-entrega por litro. Acima dessa proporção, o litro mais barato sai mais caro por quilômetro rodado.
+A referência de 70% usada na P3 vem do rendimento do etanol: por ter menor poder calorífico, ele
+rende cerca de 70% do que a gasolina rende por litro. Quando o preço do etanol passa de 70% do preço
+da gasolina, o custo por quilômetro rodado fica maior, mesmo com o litro mais barato.
 
-Posto bandeirado é o que exibe a marca de uma distribuidora e só pode vender o combustível dela. Posto
-de bandeira branca não exibe marca e compra de qualquer distribuidora. As duas definições são do
-dicionário de metadados da ANP.
+As definições de posto bandeirado e de bandeira branca seguem o dicionário de metadados da ANP. O
+posto bandeirado exibe a marca de uma distribuidora e só pode vender combustível dela; o de bandeira
+branca não exibe marca e pode comprar de qualquer distribuidora.
 
 ### Granularidade e frequência de atualização
 
-O menor nível do dado é um preço, de um combustível, em um posto, em uma data de coleta. As tabelas
-finais guardam esse nível, e semana, mês, município, estado e região saem por agregação.
+O menor nível de detalhe disponível é o preço de um combustível em um posto em uma data de coleta, e
+foi nesse nível que as tabelas finais foram mantidas. As agregações por semana, mês, município,
+estado e região são feitas nas consultas.
 
-A pesquisa da ANP é semanal, então processamento em tempo real não se justifica. Neste MVP a carga é
-em lote, a partir dos arquivos semestrais. Em produção, o mesmo pipeline rodaria em carga semanal ou
-mensal, acrescentando os arquivos novos.
+Como a pesquisa da ANP é semanal, não há motivo para processamento em tempo real. Neste MVP a carga é
+feita em lote, a partir dos arquivos semestrais; em produção, o mesmo pipeline poderia ser executado
+semanal ou mensalmente, incorporando os arquivos novos.
 
 ### Contexto dos dados brutos
 
@@ -55,16 +59,17 @@ mensal, acrescentando os arquivos novos.
 | Cobertura | 27 unidades da federação, 417 pares de estado e município, 7.963 postos no primeiro semestre de 2026 |
 | Produtos | Gasolina comum, gasolina aditivada, etanol hidratado, diesel, diesel S10 e GNV |
 
-A pesquisa é amostral, não um censo de postos. As conclusões valem para os municípios pesquisados.
+Por se tratar de uma pesquisa amostral, e não de um censo dos postos, as conclusões valem para os
+municípios pesquisados.
 
-Não há dados pessoais. Os registros identificam pessoas jurídicas (CNPJ, razão social e endereço
-comercial do posto) e são de publicação obrigatória por lei, o que dispensa anonimização.
+A base não contém dados pessoais. Os registros identificam pessoas jurídicas (CNPJ, razão social e
+endereço comercial do posto) e são de publicação obrigatória por lei, o que dispensa anonimização.
 
 ### Estrutura dos dados brutos
 
-Cada arquivo é uma tabela única, no formato de uma linha por preço coletado, com 16 colunas e sem
-arquivos relacionados. Separador ponto e vírgula, codificação UTF-8 com BOM, quebra de linha CRLF,
-decimal com vírgula e data no formato dd/mm/aaaa.
+Cada arquivo semestral é uma tabela única, com uma linha por preço coletado e 16 colunas, sem
+arquivos relacionados. O formato é CSV com separador ponto e vírgula, codificação UTF-8 com BOM,
+quebra de linha CRLF, decimal com vírgula e datas no formato dd/mm/aaaa.
 
 | Coluna | Conteúdo |
 |---|---|
@@ -78,54 +83,53 @@ decimal com vírgula e data no formato dd/mm/aaaa.
 | Unidade de Medida | R$/litro para os combustíveis líquidos, R$/m³ para o GNV |
 | Bandeira | Marca da distribuidora exibida pelo posto, ou BRANCA |
 
-As chaves usadas na modelagem são o CNPJ da revenda para identificar o posto, o par estado e município
-para a localidade, e o produto e a data da coleta para o restante.
+Na modelagem, o posto é identificado pelo CNPJ da revenda e a localidade, pelo par estado e
+município. O produto e a data da coleta completam a identificação de cada registro.
 
 ### Licença dos dados
 
-A ANP não nomeia uma licença específica na página do conjunto. Os dados são publicados sob a Política
-de Dados Abertos do Executivo federal, instituída pelo Decreto 8.777/2016, cujo artigo 2º, inciso III,
-define dado aberto como aquele disponibilizado "sob licença aberta que permita sua livre utilização,
-consumo ou cruzamento, limitando-se a creditar a autoria ou a fonte".
-
-O uso, a transformação e o cruzamento dos dados estão liberados, com citação obrigatória da fonte.
+A página do conjunto na ANP não indica uma licença específica. Os dados são publicados no âmbito da
+Política de Dados Abertos do Poder Executivo federal, instituída pelo Decreto nº 8.777/2016, que no
+artigo 2º, inciso III, define dado aberto como aquele disponibilizado "sob licença aberta que permita
+sua livre utilização, consumo ou cruzamento, limitando-se a creditar a autoria ou a fonte". O uso, a
+transformação e o cruzamento dos dados são, portanto, permitidos, desde que a ANP seja citada como
+fonte.
 
 O rodapé do site da ANP exibe a licença Creative Commons Atribuição-SemDerivações 3.0, que proíbe
-derivações. Essa licença cobre o conteúdo editorial do site, não os conjuntos publicados como dados
-abertos, que seguem o decreto citado acima.
+obras derivadas. Essa licença se aplica ao conteúdo editorial do portal, e não aos conjuntos
+publicados como dados abertos, que seguem o decreto citado.
 
 Fonte: ANP, Série Histórica de Preços de Combustíveis.
 https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/serie-historica-de-precos-de-combustiveis
 
 ## Carga dos Dados (Etapa 4.2)
 
-A coleta foi feita por download manual e upload pela interface do Databricks, o caminho recomendado
-pelo enunciado para o caso simples. A Free Edition restringe o acesso de saída à internet, o que torna
-o download de dentro do notebook pouco confiável, e o volume de dados não justifica construir um robô
-de coleta.
+A coleta foi feita por download manual dos arquivos e upload pela interface do Databricks, que é o
+caso simples previsto no enunciado. Essa opção foi escolhida por dois motivos: a Free Edition
+restringe o acesso de saída à internet, o que torna pouco confiável baixar os arquivos de dentro do
+notebook, e o volume de dados não justificava um processo automatizado de coleta.
 
-Passo a passo executado:
+Etapas executadas:
 
-1. Download dos dois arquivos semestrais na página de dados abertos da ANP, em formato ZIP.
-2. Descompactação local, resultando em `Precos_semestrais_-_AUTOMOTIVOS_2025.02.csv` (63,7 MB) e
+1. Download dos dois arquivos semestrais, em formato ZIP, na página de dados abertos da ANP.
+2. Descompactação local, que resultou em `Precos_semestrais_-_AUTOMOTIVOS_2025.02.csv` (63,7 MB) e
    `Precos_semestrais_-_AUTOMOTIVOS_2026.01.csv` (72,1 MB).
-3. Upload dos dois CSV para o volume `combustiveis.bronze.arquivos_anp`, do Unity Catalog, sem
-   qualquer alteração de conteúdo.
+3. Upload dos dois arquivos para o volume `combustiveis.bronze.arquivos_anp`, no Unity Catalog, sem
+   alteração de conteúdo.
 4. Leitura dos arquivos pelo notebook de ingestão e gravação da tabela Delta `bronze.precos_anp`.
 
-O volume guarda arquivos e a tabela guarda linhas e colunas. O arquivo original permanece no volume
-depois da ingestão, para que qualquer reprocessamento parta exatamente do que a ANP publicou, sem
-depender de a fonte ainda estar no ar.
+Os arquivos originais permanecem no volume após a ingestão. Assim, um reprocessamento parte sempre do
+mesmo conteúdo publicado pela ANP, sem depender de a página de origem continuar disponível.
 
-Observações sobre a origem, encontradas durante a coleta e registradas por afetarem a reprodutibilidade:
+Durante a coleta foram registradas duas observações sobre a fonte, por afetarem a reprodutibilidade:
 
-- Os arquivos mensais da ANP têm nomes inconsistentes. O de abril de 2026 está publicado sem a extensão
-  `.csv` e o de fevereiro de 2026 tem erro de digitação no nome. Os arquivos semestrais, usados aqui,
-  seguem um padrão estável.
-- Os dois semestres não têm a mesma formatação, ainda que venham do mesmo levantamento. A seção de
-  qualidade detalha as divergências.
+- Os arquivos mensais da ANP não seguem um padrão de nome: o de abril de 2026 foi publicado sem a
+  extensão `.csv`, e o de fevereiro de 2026 tem um erro de digitação no nome. Por isso foram usados os
+  arquivos semestrais, cujo padrão é estável.
+- Os dois semestres, embora venham do mesmo levantamento, não têm a mesma formatação. As diferenças
+  estão detalhadas na seção de qualidade.
 
-Estrutura de objetos criada no Unity Catalog:
+Estrutura criada no Unity Catalog:
 
 ```
 combustiveis                        catálogo do projeto
@@ -145,44 +149,46 @@ combustiveis                        catálogo do projeto
     └── dim_tempo                   365 dias
 ```
 
-Optamos por um catálogo por projeto, com uma camada por schema. O enunciado sugere um catálogo por
-camada, arranjo igualmente válido; a escolha por catálogo único deixa os nomes qualificados mais curtos
-nas consultas entre camadas e concentra a governança do projeto em um objeto só.
+Foi adotado um catálogo para o projeto, com uma camada por schema. O enunciado sugere um catálogo por
+camada, o que também seria válido; com o catálogo único, os nomes qualificados ficam mais curtos nas
+consultas entre camadas e a governança do projeto fica concentrada em um só objeto.
 
-Scripts: [`notebooks/00_setup_ambiente.sql`](notebooks/00_setup_ambiente.sql) cria catálogo, schemas e
-volume; [`notebooks/01_bronze_ingestao.py`](notebooks/01_bronze_ingestao.py) carrega os arquivos.
+Scripts: [`notebooks/00_setup_ambiente.sql`](notebooks/00_setup_ambiente.sql) cria o catálogo, os
+schemas e o volume; [`notebooks/01_bronze_ingestao.py`](notebooks/01_bronze_ingestao.py) carrega os
+arquivos.
 
 ![Volume do Unity Catalog com os dois arquivos da ANP](docs/img/03_volume.png)
 
 ![Contagem de linhas por arquivo de origem, conferida contra os CSV](docs/img/04_bronze_contagem.png)
 
-A conferência de carga comparou a contagem por arquivo com a contagem feita nos CSV antes do upload:
-384.208 linhas no arquivo de 2025.02 e 422.418 no de 2026.01, totalizando 806.626. Os números batem,
-o que confirma que nenhuma linha se perdeu no caminho até a nuvem.
+Para conferir a carga, a contagem de linhas por arquivo foi comparada com a contagem feita nos CSV
+antes do upload: 384.208 linhas no arquivo de 2025.02 e 422.418 no de 2026.01, com total de 806.626.
+Os valores coincidem, o que mostra que nenhuma linha foi perdida no envio para a nuvem.
 
 ## Modelagem e Catálogo de Dados (Etapa 4.3)
 
 ### Modelo escolhido
 
-Esquema estrela, com uma tabela de fatos e quatro dimensões. O documento completo de desenho, com as
-alternativas descartadas e a justificativa de cada decisão, está em [`docs/modelagem.md`](docs/modelagem.md).
+Foi adotado o esquema estrela, com uma tabela de fatos e quatro dimensões. O documento de desenho,
+com as alternativas consideradas e a justificativa das decisões, está em
+[`docs/modelagem.md`](docs/modelagem.md).
 
-A fonte entrega um arquivo plano, com o contexto repetido em cada linha: o endereço de um posto aparece
-de novo a cada coleta. Em 806.620 linhas, isso significa repetir o cadastro de 9.189 postos dezenas de
-vezes. O esquema estrela separa o evento do contexto, o que reduz a repetição e, principalmente,
-organiza o dado no formato que as perguntas pedem, já que todas são do tipo "preço médio por alguma
-coisa".
+A fonte é um arquivo plano, em que o contexto se repete em todas as linhas: o endereço de um posto,
+por exemplo, aparece novamente a cada coleta. Nas 806.620 linhas, o cadastro dos 9.189 postos é
+repetido dezenas de vezes. O esquema estrela separa os eventos (os preços coletados) do contexto
+(posto, produto, bandeira e data), o que elimina essa repetição e organiza os dados no formato que as
+perguntas exigem, já que todas envolvem médias de preço agrupadas por algum atributo.
 
-O esquema snowflake foi descartado porque normalizar localidade em tabelas separadas acrescentaria
-junções sem ganho prático nesta escala. O modelo plano foi descartado porque é o que a fonte já
-entrega.
+O esquema snowflake foi descartado porque separar município e estado em tabelas próprias acrescentaria
+junções sem ganho prático nesse volume de dados. O modelo plano foi descartado por ser o formato que
+a fonte já entrega.
 
 ### Grão
 
-Uma linha da `fato_preco_coleta` é o preço de um combustível, em um posto, em uma data de coleta. É o
-nível mais fino que a fonte fornece, e guardar nele mantém todas as agregações possíveis. Se a fato
-nascesse agregada por mês e estado, a pergunta P5, que compara postos dentro do mesmo município na
-mesma semana, ficaria sem resposta.
+Cada linha da `fato_preco_coleta` corresponde ao preço de um combustível, em um posto, em uma data de
+coleta. É o nível mais detalhado que a fonte oferece, o que mantém possíveis todas as agregações. Se
+a fato fosse gravada já agregada por mês e estado, a P5, que compara postos de um mesmo município na
+mesma semana, não poderia ser respondida.
 
 ### Diagrama
 
@@ -229,24 +235,25 @@ erDiagram
     }
 ```
 
-### Duas decisões de modelagem que vieram da análise de qualidade
+### Decisões de modelagem motivadas pela análise de qualidade
 
-**A bandeira fica na tabela de fatos, não na dimensão do posto.** O perfil de qualidade encontrou 359
-postos que exibiram mais de uma bandeira durante os doze meses. Não é erro: o posto trocou de
-distribuidora. Se a bandeira fosse atributo fixo do posto, todo o histórico dele passaria a aparecer
-sob a marca mais recente, e a resposta da P4 seria calculada sobre dado errado.
+A bandeira foi associada à tabela de fatos, e não à dimensão de posto. O perfil de qualidade mostrou
+359 postos com mais de uma bandeira ao longo dos doze meses, o que corresponde a trocas de
+distribuidora. Se a bandeira fosse um atributo fixo do posto, todo o histórico passaria a aparecer sob
+a marca mais recente, e a P4 seria calculada com informação incorreta.
 
-**A dimensão de posto guarda a versão cadastral mais recente.** É uma dimensão de mudança lenta do
-tipo 1: o valor antigo é sobrescrito e não há histórico do atributo. A escolha cabe porque nenhuma das
-cinco perguntas depende do endereço anterior de um posto. A bandeira, que muda e importa para a
-análise, ficou fora desta dimensão justamente por isso.
+A dimensão de posto guarda a versão cadastral mais recente de cada posto, o que corresponde a uma
+dimensão de mudança lenta do tipo 1: o valor anterior é sobrescrito e o histórico do atributo não é
+mantido (KIMBALL; ROSS, 2013). A simplificação é aceitável porque nenhuma das perguntas depende do
+endereço anterior de um posto. A bandeira, cujo histórico importa para a análise, ficou fora dessa
+dimensão pelo motivo descrito acima.
 
 ### Catálogo de dados
 
-Todas as 10 tabelas e as 83 colunas do projeto têm descrição gravada no Unity Catalog, por
+As 10 tabelas e as 83 colunas do projeto têm descrição gravada no Unity Catalog, por meio de
 `COMMENT ON TABLE` e `COMMENT ON COLUMN`, no script
-[`notebooks/06_catalogo_dados.sql`](notebooks/06_catalogo_dados.sql). Uma consulta de verificação no
-`information_schema` confirma que não há coluna sem descrição.
+[`notebooks/06_catalogo_dados.sql`](notebooks/06_catalogo_dados.sql). Uma consulta ao
+`information_schema` confirma que nenhuma coluna ficou sem descrição.
 
 ![Catálogo com as descrições de tabelas e colunas gravadas no Unity Catalog](docs/img/05_catalogo_colunas.png)
 
@@ -256,7 +263,8 @@ Todas as 10 tabelas e as 83 colunas do projeto têm descrição gravada no Unity
 
 ![Tabela aberta no Catalog Explorer, com as descrições visíveis](docs/img/07_catalog_explorer.png)
 
-Transcrição do catálogo. Os domínios referem-se ao período carregado, de julho de 2025 a junho de 2026.
+A transcrição do catálogo está a seguir. Os domínios se referem ao período carregado, de julho de 2025
+a junho de 2026.
 
 #### gold.fato_preco_coleta
 
@@ -282,7 +290,7 @@ Linhagem: derivada de `silver.precos`. 9.189 registros.
 |---|---|---|
 | sk_posto | bigint | Chave substituta, inteiro sequencial |
 | cnpj_digitos | string | Chave natural: CNPJ apenas com dígitos, 14 caracteres |
-| cnpj | string | CNPJ com máscara, para leitura humana |
+| cnpj | string | CNPJ com máscara, para leitura |
 | razao_social | string | Razão social do posto |
 | logradouro | string | Logradouro do posto |
 | numero | string | Número do logradouro, ou S/N |
@@ -328,8 +336,8 @@ partir dos limites de data de `silver.precos`. 365 registros.
 | mes | int | Mês. Domínio: 1 a 12 |
 | dia | int | Dia do mês. Domínio: 1 a 31 |
 | ano_mes | string | Formato aaaa-mm, usado nas séries mensais |
-| semana_inicio | date | Segunda-feira que inicia a semana. É a chave de agrupamento semanal, porque rótulos de ano e número de semana são ambíguos na virada do ano |
-| ano_semana | string | Rótulo legível da semana, aaaa-Snn, apenas para leitura |
+| semana_inicio | date | Segunda-feira em que a semana começa. É a chave de agrupamento semanal, porque rótulos de ano e número de semana são ambíguos na virada do ano |
+| ano_semana | string | Rótulo da semana no formato aaaa-Snn, apenas para leitura |
 | trimestre | int | Domínio: 1 a 4 |
 | semestre | int | Domínio: 1, 2 |
 | dia_semana | string | Nome do dia da semana, em inglês |
@@ -363,11 +371,11 @@ transformações registradas em `silver.log_transformacoes`. 806.620 linhas.
 
 #### bronze.precos_anp
 
-Dado como publicado pela ANP, sem tratamento, com todas as colunas em texto. 806.626 linhas. Os nomes
-das colunas foram padronizados na ingestão (o cabeçalho original usa nomes como `Regiao - Sigla` e traz
-um marcador BOM no início do arquivo); os valores permanecem intactos. A descrição completa de cada
-coluna está gravada no Unity Catalog, e as 16 colunas correspondem às da seção "Estrutura dos dados
-brutos", acrescidas de `_arquivo_origem` e `_data_ingestao`.
+Dados como publicados pela ANP, sem tratamento, com todas as colunas em texto. 806.626 linhas. Os
+nomes das colunas foram padronizados na ingestão, já que o cabeçalho original usa nomes como
+`Regiao - Sigla` e traz um marcador BOM no início do arquivo; os valores não foram alterados. A
+descrição de cada coluna está gravada no Unity Catalog. As 16 colunas correspondem às listadas em
+"Estrutura dos dados brutos", acrescidas de `_arquivo_origem` e `_data_ingestao`.
 
 #### Tabelas de apoio
 
@@ -379,50 +387,51 @@ brutos", acrescidas de `_arquivo_origem` e `_data_ingestao`.
 
 ## Pipeline de Dados (Etapa 4.4)
 
-O pipeline está dividido em oito notebooks, um por etapa, em vez de um único notebook com tudo. A
-divisão segue o fluxo entre tabelas: cada notebook lê de uma camada e escreve na seguinte, o que
-permite reexecutar apenas a parte afetada quando algo muda e deixa claro, pelo nome do arquivo, onde
-procurar cada transformação.
+O pipeline foi dividido em oito notebooks, um por etapa. Cada notebook lê de uma camada e grava na
+seguinte, o que permite reexecutar apenas a parte afetada por uma alteração e facilita localizar cada
+transformação pelo nome do arquivo.
 
 | Notebook | O que faz | Entrada | Saída |
 |---|---|---|---|
 | [`00_setup_ambiente.sql`](notebooks/00_setup_ambiente.sql) | Cria catálogo, schemas e volume | — | Estrutura do Unity Catalog |
 | [`01_bronze_ingestao.py`](notebooks/01_bronze_ingestao.py) | Lê os CSV e grava a bronze | Volume | `bronze.precos_anp` |
-| [`02_qualidade_bronze.py`](notebooks/02_qualidade_bronze.py) | Perfil de qualidade do dado bruto | `bronze.precos_anp` | `bronze.perfil_completude` |
+| [`02_qualidade_bronze.py`](notebooks/02_qualidade_bronze.py) | Perfil de qualidade dos dados brutos | `bronze.precos_anp` | `bronze.perfil_completude` |
 | [`03_silver_limpeza.py`](notebooks/03_silver_limpeza.py) | Tipagem, padronização e remoção de duplicatas | `bronze.precos_anp` | `silver.precos`, `silver.log_transformacoes` |
 | [`04_gold_modelo_estrela.py`](notebooks/04_gold_modelo_estrela.py) | Monta as dimensões e a fato | `silver.precos` | 5 tabelas em `gold` |
 | [`05_qualidade_pos_pipeline.py`](notebooks/05_qualidade_pos_pipeline.py) | Repete as verificações nas tabelas finais | `silver`, `gold` | `silver.perfil_completude` |
 | [`06_catalogo_dados.sql`](notebooks/06_catalogo_dados.sql) | Grava as descrições no Unity Catalog e verifica se alguma coluna ficou sem documentação | — | Metadados |
 | [`07_analise_perguntas.py`](notebooks/07_analise_perguntas.py) | Responde às cinco perguntas | `gold` | Resultados |
 
-Todas as escritas usam modo `overwrite` e todos os comandos de criação usam `IF NOT EXISTS`. O pipeline
-é idempotente: rodar uma vez ou dez vezes produz o mesmo resultado, sem duplicar dados. É o que permite
-reexecutar depois de uma falha sem precisar investigar o que já tinha sido processado.
+Todas as gravações usam o modo `overwrite`, e os comandos de criação usam `IF NOT EXISTS`, de modo que
+o pipeline pode ser executado mais de uma vez sem duplicar dados. Isso permite, por exemplo,
+reexecutá-lo após uma falha sem verificar antes o que já havia sido processado.
 
 ### Transformações da camada silver
 
-Cada transformação corresponde a um problema medido no notebook 02. O número de linhas afetadas é
-gravado em `silver.log_transformacoes` a cada execução, e não escrito à mão na documentação.
+Cada transformação responde a um problema identificado no notebook 02. A quantidade de linhas afetadas
+é gravada na tabela `silver.log_transformacoes` a cada execução, em vez de ser registrada manualmente.
 
-| # | Transformação | Por quê | Linhas afetadas |
+| # | Transformação | Motivo | Linhas afetadas |
 |---|---|---|---|
-| 1 | Remoção de duplicatas exatas | Coletas registradas duas vezes puxariam a média do posto | 6 |
-| 2 | Padronização de espaços em campos de texto | Espaço à esquerda no CNPJ em todo o arquivo de 2026.01 e espaços duplos em endereços; sem isso o mesmo posto viraria dois registros na dimensão | 461.587 |
-| 3 | Conversão do preço para `decimal(6,3)` | Publicado como texto com vírgula decimal, em três formatos diferentes | 806.620 |
-| 4 | Conversão da data para `date` | Publicada como texto dd/mm/aaaa; ordenação alfabética colocaria 01/12 antes de 02/07 | 806.620 |
-| 5 | Criação do CNPJ apenas com dígitos | Chave natural imune a mudança de máscara na fonte | 806.620 |
+| 1 | Remoção de duplicatas exatas | Coletas registradas duas vezes pesariam em dobro na média do posto | 6 |
+| 2 | Padronização de espaços em campos de texto | Espaço à esquerda no CNPJ em todo o arquivo de 2026.01 e espaços duplos em endereços; sem essa etapa, o mesmo posto viraria dois registros na dimensão | 461.587 |
+| 3 | Conversão do preço para `decimal(6,3)` | Preço publicado como texto com vírgula decimal, em três formatos diferentes | 806.620 |
+| 4 | Conversão da data para `date` | Data publicada como texto dd/mm/aaaa; a ordenação alfabética colocaria 01/12 antes de 02/07 | 806.620 |
+| 5 | Criação do CNPJ apenas com dígitos | Chave natural que não depende da máscara usada pela fonte | 806.620 |
 | 6 | Unificação da grafia da unidade de medida | GNV publicado com duas grafias, uma em cada arquivo | 17.169 |
 | 7 | Padronização do número do logradouro | Quatro variantes de "sem número" na fonte | 86.563 |
-| 8 | Descarte da coluna `valor_compra` | Integralmente vazia desde agosto de 2020; mantê-la convida a calcular margem com ela | 806.626 |
+| 8 | Descarte da coluna `valor_compra` | Coluna vazia desde agosto de 2020, que poderia ser usada por engano em cálculos de margem | 806.626 |
 
 ### Montagem da camada gold
 
-A fato é montada por três junções com as dimensões, cada uma trocando um atributo descritivo pela
-chave substituta correspondente: `dim_produto` por produto e unidade de medida, `dim_bandeira` por
-bandeira e `dim_posto` pelo CNPJ apenas com dígitos. A data permanece como chave da dimensão de tempo.
+A fato é construída a partir da silver por meio de três junções, que substituem os atributos
+descritivos pelas chaves substitutas: com a `dim_produto`, pelo produto e pela unidade de medida; com
+a `dim_bandeira`, pela bandeira; e com a `dim_posto`, pelo CNPJ apenas com dígitos. A data permanece
+como chave da dimensão de tempo.
 
-Como as três dimensões são derivadas da própria silver, nenhuma linha pode ficar sem correspondência.
-A verificação confirma: a fato tem exatamente as mesmas 806.620 linhas da silver, e nenhuma chave nula.
+Como as dimensões são derivadas da própria silver, todas as linhas devem encontrar correspondência. A
+validação confirmou esse resultado: a fato tem as mesmas 806.620 linhas da silver e nenhuma chave
+nula.
 
 ![Tabelas do modelo estrela persistidas no Catalog Explorer](docs/img/08_gold_tabelas.png)
 
@@ -430,43 +439,44 @@ A verificação confirma: a fato tem exatamente as mesmas 806.620 linhas da silv
 
 ## Qualidade de Dados (Etapa 4.5)
 
-A verificação foi feita em dois momentos: sobre o dado bruto, logo depois da ingestão, e sobre as
-tabelas finais, depois do pipeline. Medir só no início prova que havia problema; medir só no fim prova
-que está limpo. A comparação entre os dois momentos é o que demonstra o efeito do pipeline.
+A qualidade foi verificada em dois momentos: sobre os dados brutos, logo após a ingestão, e sobre as
+tabelas finais, depois do pipeline. A comparação entre as duas medições permite mostrar quais
+problemas foram resolvidos e quais foram mantidos por decisão.
 
-### O que foi encontrado no dado bruto
+### Problemas encontrados nos dados brutos
 
-Cinco dimensões verificadas para cada atributo, no notebook
-[`02_qualidade_bronze.py`](notebooks/02_qualidade_bronze.py).
+Foram verificadas, para cada atributo, as cinco dimensões de qualidade pedidas no enunciado, no
+notebook [`02_qualidade_bronze.py`](notebooks/02_qualidade_bronze.py).
 
-| Dimensão | Achado |
+| Dimensão | Resultado |
 |---|---|
 | Completude | `valor_compra` ausente em 100% das linhas; `complemento` em 77,38%; `bairro` em 0,17% |
 | Consistência | 253 preços fora do padrão com vírgula decimal; 422.418 CNPJ com espaço à esquerda; 106.395 números de logradouro não numéricos; duas grafias para a unidade do GNV |
 | Unicidade | 6 linhas duplicadas exatas, que também repetem a chave de negócio |
 | Acurácia | Nenhum preço nulo ou não positivo; faixas por combustível compatíveis com o mercado; 12 meses de cobertura, sem mês faltando |
-| Outliers | Entre 1,36% e 1,94% das coletas fora do intervalo entre o primeiro e o nonagésimo nono percentil de cada produto |
+| Outliers | Entre 1,36% e 1,94% das coletas fora do intervalo entre o percentil 1 e o percentil 99 de cada produto |
 
-O achado mais relevante não é nenhum desses números isolados, e sim o padrão que eles revelam: **os
-dois arquivos vêm do mesmo levantamento, da mesma agência, e não seguem a mesma formatação.** O CNPJ
-com espaço aparece em todas as 422.418 linhas do arquivo de janeiro a junho de 2026 e em nenhuma linha
-do arquivo anterior. Os 253 preços sem vírgula e os 6.627 com uma casa decimal estão todos no arquivo
-de julho a dezembro de 2025. A unidade do GNV é `R$ / m3` em um arquivo e `R$ / m³` no outro.
+A análise também mostrou que os dois arquivos, mesmo sendo do mesmo levantamento e da mesma agência,
+seguem padrões de formatação diferentes. O CNPJ com espaço à esquerda aparece em todas as 422.418
+linhas do arquivo de janeiro a junho de 2026 e em nenhuma do arquivo anterior. Os 253 preços sem
+vírgula e os 6.627 preços com uma casa decimal estão todos no arquivo de julho a dezembro de 2025. A
+unidade do GNV é grafada `R$ / m3` em um arquivo e `R$ / m³` no outro.
 
-Nada disso está documentado pela fonte. É a justificativa concreta para a existência da camada silver:
-a bronze preserva o que foi publicado, divergências inclusive, e a padronização acontece depois, com
-registro. Se a limpeza acontecesse na entrada, a diferença entre os arquivos teria desaparecido sem
-deixar rastro, e a próxima mudança de formato da fonte seria descoberta do mesmo jeito, do zero.
+Essas diferenças não estão documentadas pela fonte e justificam a separação entre as camadas bronze e
+silver. A bronze guarda os dados como foram publicados, com as divergências, e a padronização é feita
+na silver, com registro do que foi alterado. Se os dados tivessem sido corrigidos já na entrada, a
+diferença entre os arquivos não ficaria registrada, e uma nova mudança de formato em publicações
+futuras seria mais difícil de identificar.
 
-### Como cada problema foi tratado
+### Tratamento de cada problema
 
 | Problema | Dimensão | Tratamento |
 |---|---|---|
 | `valor_compra` inteiramente vazia | Completude | Coluna descartada, com o motivo registrado no catálogo |
-| `complemento` ausente na maior parte das linhas | Completude | Mantida: complemento opcional em endereço não é defeito |
-| Preço como texto, em três formatos | Consistência | Convertido para `decimal(6,3)`; nenhuma conversão perdida |
+| `complemento` ausente na maior parte das linhas | Completude | Mantida, por ser um campo opcional do endereço |
+| Preço como texto, em três formatos | Consistência | Convertido para `decimal(6,3)`, sem conversões perdidas |
 | Data como texto | Consistência | Convertida para `date` |
-| CNPJ com espaço e com máscara | Consistência | Espaço removido, máscara preservada para leitura e versão só com dígitos criada como chave |
+| CNPJ com espaço e com máscara | Consistência | Espaço removido, máscara preservada para leitura e versão apenas com dígitos criada como chave |
 | Quatro formas de "sem número" | Consistência | Unificadas em S/N |
 | Duas grafias da unidade do GNV | Consistência | Unificadas em `R$ / m3` |
 | 6 linhas duplicadas | Unicidade | Removidas |
@@ -474,9 +484,9 @@ deixar rastro, e a próxima mudança de formato da fonte seria descoberta do mes
 | Posto com mais de uma bandeira no período | Modelagem | Bandeira tratada como atributo da coleta, na tabela de fatos |
 | Preços extremos | Outliers | Mantidos, com o intervalo documentado |
 
-### Antes e depois
+### Comparação antes e depois
 
-Verificações repetidas nas tabelas finais, no notebook
+As mesmas verificações foram repetidas nas tabelas finais, no notebook
 [`05_qualidade_pos_pipeline.py`](notebooks/05_qualidade_pos_pipeline.py).
 
 | Verificação | Bronze | Tabelas finais |
@@ -495,14 +505,15 @@ Verificações repetidas nas tabelas finais, no notebook
 
 ![Consistência das tabelas finais, com zero em todos os testes de erro](docs/img/11_qualidade_consistencia.png)
 
-A diferença de seis linhas entre a bronze e as tabelas finais é exatamente a remoção das duplicatas
-exatas, e está registrada no log de transformações. Nenhuma outra linha foi perdida: a silver e a fato
-têm o mesmo total.
+A diferença de seis linhas entre a bronze e as tabelas finais corresponde à remoção das duplicatas
+exatas, registrada no log de transformações. A silver e a fato têm o mesmo total, o que mostra que
+nenhuma outra linha foi perdida.
 
-### Por que os outliers foram mantidos
+### Tratamento dos outliers
 
-Preço extremo não é sinônimo de erro. A distribuição deles é regional e coerente com o custo logístico
-de cada estado.
+Os preços extremos foram mantidos na base. Ao analisar sua distribuição por estado, verificou-se que
+eles se concentram em estados com custo logístico alto, o que indica diferença regional de preço, e
+não erro de registro.
 
 | Estado | Coletas de gasolina | Acima do percentil 99 | Proporção do estado | Preço médio do estado |
 |---|---|---|---|---|
@@ -512,18 +523,17 @@ de cada estado.
 | BA | 9.958 | 485 | 4,87% | 6,722 |
 | SP | 61.148 | 562 | 0,92% | 6,243 |
 
-Esta tabela ilustra um cuidado de leitura que vale para todo o trabalho. Ordenada por contagem
-absoluta, São Paulo aparece em primeiro lugar, com 562 coletas extremas, o que sugeriria que o estado
-tem os preços mais atípicos do país. O que ele tem é a maior amostra: 61.148 coletas. Em proporção, SP
-fica em 0,92%, enquanto Acre e Roraima passam de 23%. Excluir esses valores como se fossem defeito
-apagaria justamente a diferença regional que a pergunta P2 procura medir.
+A primeira versão dessa consulta ordenava os estados pela contagem absoluta e colocava São Paulo em
+primeiro lugar, com 562 coletas acima do percentil 99. Isso ocorria apenas porque o estado tem a
+maior amostra, com 61.148 coletas. Em proporção, São Paulo fica em 0,92%, enquanto Acre e Roraima
+passam de 23%. A exclusão desses valores eliminaria justamente a diferença regional que a P2 procura
+medir.
 
 ## Análise de Dados (Etapa 4.5)
 
-Consultas no notebook [`07_analise_perguntas.py`](notebooks/07_analise_perguntas.py). O GNV fica fora
-de todas as comparações por litro, por ser medido em metro cúbico; a coluna `comparavel_por_litro` da
-dimensão de produto sustenta essa regra no modelo, em vez de deixá-la a cargo de quem escreve a
-consulta.
+As consultas estão no notebook [`07_analise_perguntas.py`](notebooks/07_analise_perguntas.py). O GNV
+foi excluído das comparações por litro, por ser vendido em metro cúbico; essa regra está representada
+no modelo pela coluna `comparavel_por_litro` da dimensão de produto.
 
 ### P1 - Evolução mensal do preço por combustível
 
@@ -537,18 +547,22 @@ consulta.
 
 ![Evolução mensal do preço médio por combustível](docs/img/12_p1_evolucao.png)
 
-**Discussão.** O ano não foi de alta contínua, e sim de um degrau. Os cinco combustíveis ficaram
-praticamente estáveis de julho de 2025 a fevereiro de 2026, saltaram entre março e abril e recuaram
-parcialmente depois. O diesel comum saiu de 6,062 em dezembro para 7,009 em março e 7,339 em abril,
-fechando junho em 6,874: parte da alta se manteve.
+Os preços não subiram de forma contínua ao longo do período. Os cinco combustíveis ficaram
+praticamente estáveis de julho de 2025 a fevereiro de 2026, subiram de forma acentuada entre março e
+abril e recuaram em parte nos meses seguintes. O diesel comum, por exemplo, passou de 6,062 em
+dezembro para 7,009 em março e 7,339 em abril, e fechou junho em 6,874, ainda acima do patamar
+anterior.
 
-A separação por combustível muda a conclusão para a frota. O diesel, que move os caminhões, subiu mais
-que o dobro da gasolina, que move os carros de vendedores. Um reajuste único de orçamento, calculado
-pela média geral dos combustíveis, subestimaria o custo da operação pesada e superestimaria o da leve.
-São duas rubricas com comportamentos diferentes e devem ser projetadas separadamente.
+A variação foi bem diferente entre os combustíveis. O diesel S10, usado pelos caminhões, subiu 16,67%
+no período, mais que o dobro da alta da gasolina (7,17%), usada pelos carros dos vendedores. Uma
+projeção de orçamento baseada na média geral dos combustíveis subestimaria o custo da frota pesada e
+superestimaria o da frota leve, por isso as duas precisam ser projetadas separadamente.
 
-O etanol, que subiu 1,62% no ano, teve o maior descolamento em relação à gasolina, e é isso que
-sustenta a resposta da P3.
+O etanol teve um comportamento próprio. O preço começou a subir em dezembro, antes dos demais
+combustíveis, atingiu a maior média mensal (4,868) entre março e abril e voltou em junho a um nível
+próximo ao de julho de 2025, com variação de apenas 1,62% no período. Esse movimento é compatível com
+a entressafra da cana-de-açúcar no Centro-Sul, que vai aproximadamente de dezembro a março, mas a base
+não permite confirmar a causa.
 
 ### P2 - Estados mais caros e mais baratos
 
@@ -558,21 +572,21 @@ sustenta a resposta da P3.
 | Gasolina | AC | 7,541 | PI | 6,129 | R$ 1,412 (23,04%) |
 
 Os cinco estados mais caros em diesel S10 são AC (7,848), AM (7,085), RR (7,055), BA (6,819) e RO
-(6,771). Quatro deles são da região Norte. São Paulo, com a maior amostra do país, fica 1,14% abaixo
+(6,771), quatro deles da região Norte. São Paulo, que tem a maior amostra do país, fica 1,14% abaixo
 da média nacional.
 
 ![Estados mais caros e mais baratos, por combustível](docs/img/13_p2_estados.png)
 
-**Discussão.** Abastecer o mesmo caminhão no Acre custa 25% a mais do que em Sergipe. Para uma frota,
-isso responde duas coisas de uma vez. Primeiro, o reembolso não pode ser um valor único nacional: hoje
-ele ou remunera demais quem roda no Nordeste ou remunera de menos quem roda no Norte. Segundo, em rota
-longa que cruza divisa, encher o tanque antes de entrar na região Norte deixa de ser preferência do
-motorista e passa a ser procedimento, com economia mensurável.
+No diesel S10, o preço médio no Acre foi 25,19% maior que em Sergipe; na gasolina, a diferença entre
+Acre e Piauí foi de 23,04%. Com diferenças dessa ordem, um valor único de reembolso para todo o país
+não é adequado: ele tende a ficar acima do necessário em estados como Sergipe e Piauí e abaixo do
+necessário nos estados do Norte. Em rotas longas que atravessam divisas, também faz sentido orientar
+os motoristas a abastecer antes de entrar nos estados mais caros.
 
-A concentração dos preços altos no Norte é coerente com a distância dos centros de distribuição de
-combustível e com o custo de transporte até lá. Vale registrar que o ICMS estadual também compõe o
-preço final e não está nesta base: a diferença medida é o efeito combinado dos dois fatores, e a base
-não permite separá-los.
+A concentração dos preços mais altos na região Norte é compatível com a distância dos centros de
+refino e distribuição e com o custo de transporte até esses estados. A base, porém, não traz custos
+de frete nem margens de distribuição e revenda, então não é possível separar os fatores que compõem a
+diferença.
 
 ### P3 - Onde compensa abastecer com etanol
 
@@ -589,24 +603,25 @@ compensa.
 | MG | 4,464 | 6,226 | 0,7170 | Não compensa | 4 de 12 |
 | DF | 4,679 | 6,410 | 0,7285 | Não compensa | 2 de 12 |
 
-Nos 20 estados restantes a razão ficou acima de 0,70 em todos os meses do período.
+Nos 20 estados restantes, a razão ficou acima de 0,70 em todos os meses do período.
 
 ![Razão entre o preço do etanol e o da gasolina, por estado](docs/img/14_p3_etanol.png)
 
-**Discussão.** A política de combustível para a frota flex é regional, não nacional. Em quatro estados
-o etanol compensou na média do ano, e todos eles são produtores de cana ou vizinhos imediatos das
-usinas: Mato Grosso do Sul, Mato Grosso, São Paulo e Paraná. A proximidade da produção reduz o custo
-de transporte do etanol, que é justamente o que o encarece nos estados distantes.
+Na média do período, o etanol compensou em quatro estados: Mato Grosso do Sul, Mato Grosso, São Paulo
+e Paraná, todos grandes produtores de etanol. A proximidade das usinas reduz o custo de transporte do
+combustível, o que é coerente com a razão mais baixa nesses estados.
 
-A coluna de meses compensando é mais acionável que a média anual. Mato Grosso do Sul compensou nos 12
-meses: lá a regra pode ser fixa. Goiás e Minas Gerais compensaram em 5 e 4 meses, o que significa que
-uma regra fixa erra nos dois sentidos, e a decisão precisa ser revista periodicamente. Como a base é
-atualizada semanalmente pela ANP e o pipeline é reprocessável, essa revisão pode ser mensal e
-automática, em vez de depender de alguém reparar no preço da bomba.
+A contagem de meses em que a razão ficou abaixo de 0,70 é mais útil para a decisão do que a média
+anual. Em Mato Grosso do Sul, o etanol compensou nos 12 meses, o que permite adotar uma regra fixa. Em
+Goiás e Minas Gerais, a vantagem apareceu em 5 e 4 meses, respectivamente; nesses estados, uma regra
+fixa estaria errada em parte do ano, e a decisão precisa ser revista periodicamente. Como a ANP
+atualiza os dados toda semana e o pipeline pode ser reexecutado, essa revisão pode ser feita
+mensalmente. A variação do etanol ao longo do ano, observada na P1, ajuda a explicar por que esses
+estados alternam entre meses em que o etanol compensa e meses em que não compensa.
 
-Um alerta de leitura: a regra dos 70% é uma referência de mercado, calculada sobre o rendimento médio
-dos motores flex. Um modelo específico pode ter rendimento diferente, e a decisão fina exigiria o
-consumo real da frota, que esta base não tem.
+O limite de 70% é uma referência média de rendimento dos motores flex. Cada modelo de veículo tem um
+rendimento próprio, e uma decisão mais precisa dependeria do consumo real da frota, que não está
+disponível nesta base.
 
 ### P4 - Bandeirado contra bandeira branca
 
@@ -624,18 +639,19 @@ AC (2,78%) e MT (2,34%).
 
 ![Comparação entre postos bandeirados e de bandeira branca, por estado](docs/img/15_p4_bandeira.png)
 
-**Discussão.** No agregado, a diferença é pequena: 0,65% em média, menos de quatro centavos por litro.
-Essa resposta sozinha sugeriria que a decisão é indiferente. Mas a média nacional esconde o que
-interessa: em oito dos 27 estados o posto bandeirado sai mais barato, e em seis estados a bandeira
-branca é mais de 2% mais barata. Em Mato Grosso do Sul e São Paulo, onde a frota roda bastante, a
-diferença passa de 4%.
+Na média dos estados, a diferença entre os dois tipos de posto é pequena, de 0,65%, o que equivale a
+R$ 0,036 por litro. Esse resultado agregado encobre situações bem diferentes. Em 8 dos 27 estados o
+posto bandeirado foi mais barato, e em 6 estados a bandeira branca foi mais de 2% mais barata, com
+diferenças acima de 4% em Mato Grosso do Sul e em São Paulo. No Amazonas ocorreu o oposto: a bandeira
+branca foi 8,85% mais cara, com apenas 292 coletas desse tipo de posto no estado, contra 2.433 de
+postos bandeirados.
 
-A recomendação, então, não é "libere bandeira branca" nem "exija bandeirado", e sim liberar por estado,
-onde a diferença for relevante. Vale registrar duas limitações. A comparação foi feita dentro de cada
-estado justamente para não confundir efeito de marca com efeito de região, mas dentro de um mesmo
-estado ainda pode haver diferença de composição, como bandeira branca mais concentrada no interior.
-E preço não é o único critério: contrato de frota costuma envolver rede credenciada, o que pode pesar
-mais que quatro centavos por litro.
+Por isso, a recomendação é liberar o abastecimento em bandeira branca por estado, onde a diferença for
+relevante, em vez de adotar uma regra nacional. A comparação dentro de cada estado evita confundir o
+efeito da marca com o efeito regional, mas não elimina diferenças de composição dentro do próprio
+estado, como uma possível concentração de postos de bandeira branca em determinadas cidades. Além
+disso, o preço não é o único critério: contratos de frota costumam envolver rede credenciada e
+condições comerciais que podem pesar mais do que alguns centavos por litro.
 
 ### P5 - Dispersão dentro do mesmo município
 
@@ -662,98 +678,136 @@ Municípios com maior dispersão média:
 
 ![Dispersão de preço dentro do mesmo município, na mesma semana](docs/img/16_p5_dispersao.png)
 
-**Discussão.** Escolher onde abastecer dentro da própria cidade vale mais do que parece. Na média, o
-posto mais barato do município está 22 centavos abaixo da média local, o que representa 3,53% do valor
-gasto. Para uma frota que consome 10 mil litros por mês, são cerca de R$ 2.240 mensais que dependem
-apenas de para onde o motorista vira.
+Nos grupos analisados, o posto mais barato do município ficou, em média, R$ 0,224 abaixo da média
+local, o que equivale a 3,53% do preço. A título de ilustração, para uma frota que consuma 10 mil
+litros por mês, essa diferença representaria cerca de R$ 2.240 mensais.
 
-Nas capitais e cidades grandes o número é muito maior. Em São Paulo, a diferença média entre o posto
-mais barato e o mais caro na mesma semana passa de R$ 3,00 por litro, mais de 50% do preço. Isso ocorre
-porque a cidade tem 205 postos pesquisados por semana, e uma amplitude tão grande costuma envolver
-postos de perfis muito diferentes, de bairro periférico a rodovia e região central. A leitura correta
-não é que exista um posto vendendo pela metade do preço do vizinho, e sim que o mercado local é
-heterogêneo o suficiente para que a escolha renda.
-
-É onde há dispersão alta e volume de abastecimento que o convênio com posto se paga. A lista de
-municípios acima é, na prática, a fila de prioridade para a área de Compras negociar.
+Nas cidades maiores, a dispersão é bem mais alta. Em São Paulo, a diferença média entre o posto mais
+barato e o mais caro na mesma semana passou de R$ 3,00 por litro. O município tem, em média, 205
+postos pesquisados por semana, e uma amplitude desse tamanho reflete a presença de postos com perfis
+e localizações muito diferentes, e não necessariamente a diferença entre postos próximos. Os
+municípios com dispersão alta e grande volume de abastecimento são os candidatos mais indicados para a
+negociação de convênios com postos.
 
 ### Discussão geral
 
-As cinco respostas, juntas, transformam o pedido inicial em uma política com quatro regras.
+O problema inicial era a ausência de critério de abastecimento e o uso de um reembolso único em todo
+o país. As respostas mostram que essa uniformidade tem custo em três aspectos: o estado onde se
+abastece (diferença de até 25% no diesel S10), o combustível usado nos carros flex (o etanol compensa
+em apenas quatro estados) e a escolha do posto dentro do município (economia média de 3,53%, maior
+nas cidades grandes). A evolução dos preços acrescenta um quarto ponto: como o diesel S10 subiu 16,67%
+e a gasolina 7,17%, os orçamentos da frota pesada e da frota leve devem ser projetados separadamente.
 
-O problema era que a frota não tinha critério de abastecimento e o reembolso era igual no país inteiro.
-Os dados mostram que essa uniformidade custa dinheiro em três dimensões independentes: **onde**
-abastecer (25% de diferença entre estados), **com o quê** (etanol compensa em quatro estados e só
-neles), e **em qual posto** (3,53% de economia média dentro do próprio município, com picos nas
-capitais). A quarta regra é temporal: o diesel subiu 16,67% no ano contra 7,17% da gasolina, então as
-duas frotas precisam de projeções orçamentárias separadas.
+Esses três aspectos exigem esforços diferentes. Mudar o estado de abastecimento depende da rota e nem
+sempre é viável, e trocar o combustível só se aplica aos veículos flex nos quatro estados em que o
+etanol compensa. A escolha do posto dentro da cidade, por outro lado, pode ser adotada em qualquer
+lugar, com orientação aos motoristas ou convênios, e tende a ser a medida mais simples de
+implementar.
 
-As três primeiras dimensões são acumulativas, mas o esforço para capturar cada uma é bem diferente. Mudar o
-estado de abastecimento depende da rota e nem sempre é possível. Mudar o combustível depende da frota
-ser flex e vale para quatro estados. Já escolher o posto dentro da cidade não depende de nada: é a
-economia mais fácil de capturar, e também a mais ignorada, porque cada abastecimento individual parece
-irrelevante.
-
-Do lado da engenharia de dados, o trabalho também mostrou que a resposta depende de decisões tomadas
-antes da análise. A bandeira precisou ficar na tabela de fatos para que a P4 fosse calculável. O grão
-precisou ser a coleta individual para que a P5 existisse. E a comparação por proporção, em vez de
-contagem absoluta, mudou completamente a leitura dos outliers. Nenhuma dessas decisões aparece no
-resultado final, mas todas as três determinam se o resultado está certo.
+Do ponto de vista da engenharia de dados, algumas respostas só foram possíveis por decisões tomadas
+na construção do pipeline. A P4 depende de a bandeira estar associada à coleta, e não ao posto; a P5
+depende de a fato ter sido mantida no nível da coleta individual; e a interpretação correta dos
+outliers dependeu do uso de proporções no lugar de contagens absolutas.
 
 ## Autoavaliação
 
 ### Objetivos atingidos
 
-As cinco perguntas definidas no início foram respondidas com os dados carregados, e nenhuma precisou
-ser alterada ou removida depois de ver o que a base continha. Isso não é sorte: antes de fixar as
-perguntas, conferi quais colunas existiam de fato, o que descartou de saída ideias como calcular a
-margem de lucro dos postos, que dependeria da coluna `valor_compra`, vazia desde 2020.
+Considero que os objetivos definidos no início foram atingidos. As cinco perguntas foram respondidas
+com os dados carregados, sem que fosse necessário alterar ou retirar nenhuma delas. Em parte, isso se
+deve ao fato de as perguntas terem sido definidas depois de verificar quais colunas a base realmente
+continha: a ideia de calcular a margem de lucro dos postos, por exemplo, foi descartada logo no início,
+porque a coluna `valor_compra` está vazia desde 2020.
 
-O pipeline roda de ponta a ponta, é idempotente e conserva o volume de dados de forma explicável: as
-seis linhas de diferença entre a origem e o destino são as duplicatas removidas, registradas no log.
-As dez tabelas e as 83 colunas estão documentadas no Unity Catalog.
+O pipeline funciona de ponta a ponta, pode ser reexecutado sem duplicar dados e mantém o volume
+rastreável: as seis linhas de diferença entre a origem e o destino são as duplicatas removidas,
+registradas no log. As dez tabelas e as 83 colunas estão documentadas no Unity Catalog.
 
-### O que ficou de fora
+### Limitações
 
-O trabalho usa uma fonte única. Não há junção entre bases diferentes, o que é comum em pipeline de
-produção, mas limita a riqueza da linhagem demonstrada.
+O trabalho usa uma única fonte de dados, sem junção entre bases diferentes. Isso é comum em pipelines
+reais, mas limita o que a linhagem consegue demonstrar.
 
-As respostas ficam no nível descritivo. A P1 mostra que houve um degrau de preço entre março e abril de
-2026, e a base não permite explicar por quê: reajuste de refinaria, mudança de tributação e custo de
-frete não estão aqui.
+As respostas são descritivas. A P1 mostra um aumento de preços entre março e abril de 2026, mas a base
+não permite explicar a causa, já que reajustes de refinaria, mudanças tributárias e custos de frete
+não fazem parte dos dados.
 
-A comparação da P4 controla o estado, mas não controla a composição dentro do estado. Uma comparação
-mais rigorosa pararia postos bandeirados e de bandeira branca do mesmo município, ou usaria um modelo
-que isole o efeito da marca das demais variáveis.
+Na P4, a comparação controla o estado, mas não a composição dentro de cada estado. Uma análise mais
+rigorosa compararia postos bandeirados e de bandeira branca do mesmo município, ou usaria um modelo
+capaz de isolar o efeito da marca das demais variáveis.
 
 ### Dificuldades encontradas
 
-A maior dificuldade não foi técnica, foi de confiança na fonte. Descobrir que dois arquivos do mesmo
-levantamento têm formatação diferente, sem nenhum aviso na documentação, muda o jeito de escrever o
-pipeline: cada suposição sobre o formato passou a exigir verificação explícita. Foi o que motivou
-contar nulos e vazios separadamente e validar formato por expressão regular antes de converter tipo.
+Uma dificuldade importante foi perceber que os dois arquivos da ANP, apesar de virem do mesmo
+levantamento, não seguem o mesmo padrão de formatação, e que isso não está documentado. A partir daí,
+cada suposição sobre o formato passou a ser verificada antes das conversões: nulos e textos vazios
+foram contados separadamente, e os formatos foram validados com expressões regulares antes da
+tipagem.
 
-A geração da dimensão de tempo falhou na primeira execução, porque o padrão de formatação que eu usei
-para o ano da semana foi recusado pelo Spark 3: em datas de virada de ano, o ano do calendário e o ano
-da semana divergem, e a versão nova bloqueia o padrão em vez de devolver resultado silenciosamente
-diferente. A correção foi identificar a semana pela data da segunda-feira que a inicia, e não pelo
-rótulo. Optei por isso em vez de ativar o modo de compatibilidade antigo, que faria o erro sumir sem
-resolver a ambiguidade.
+A primeira execução da dimensão de tempo falhou porque o padrão de data usado para obter o ano da
+semana não é mais aceito pelo Spark 3. Na virada do ano, o ano civil e o ano da semana podem ser
+diferentes, e a versão atual bloqueia esse padrão em vez de devolver um resultado ambíguo. A mensagem
+de erro sugeria ativar o modo de compatibilidade antigo, mas preferi identificar a semana pela data da
+segunda-feira em que ela começa, o que resolve a ambiguidade em vez de apenas esconder o erro.
 
-Também precisei rever a primeira versão da consulta de outliers, que ordenava por contagem absoluta e
-colocava São Paulo no topo por ter a maior amostra. A leitura correta exigia proporção dentro de cada
-estado.
+No uso do Databricks, tive dificuldade para manter a Git folder sincronizada com o repositório. Os
+notebooks guardam o resultado das células dentro do próprio arquivo, então cada execução deixava os
+arquivos marcados como modificados. Depois que dois notebooks foram renomeados no repositório, isso
+gerou um conflito na atualização, resolvido descartando as alterações locais, que eram apenas
+resultados de execução. Também cheguei a executar notebooks sem antes atualizar a cópia do
+Databricks, o que produziu resultados da versão anterior do código. Outro ponto foi a escolha do
+recurso de computação: o SQL Warehouse executa apenas SQL, e os notebooks em Python precisaram rodar
+no compute serverless de uso geral.
+
+A consulta de outliers também precisou ser refeita, porque a primeira versão ordenava os estados pela
+contagem absoluta e colocava São Paulo no topo apenas por ter a maior amostra.
 
 ### Trabalhos futuros
 
-- Enriquecer o modelo com uma segunda fonte, como população por município do IBGE, para responder se
-  cidade maior tem preço menor ou dispersão maior. Exigiria padronizar nome de município, já que a base
+- Incluir uma segunda fonte, como a população por município do IBGE, para verificar se cidades maiores
+  têm preço menor ou dispersão maior. Seria necessário padronizar o nome dos municípios, já que a base
   da ANP não traz o código do IBGE.
-- Incorporar carga incremental com os arquivos mensais da ANP, demonstrando que o pipeline aceita dados
+- Implementar carga incremental com os arquivos mensais da ANP, mostrando que o pipeline aceita dados
   novos sem ser reescrito.
-- Acrescentar validações automáticas de formato na ingestão, que alertem quando a fonte mudar o padrão,
-  em vez de depender de o problema ser notado na análise.
-- Cruzar com a alíquota de ICMS de cada estado, para separar o efeito tributário do custo logístico na
-  diferença de preço regional.
-- Estender a P1 com uma análise de assimetria de reajuste, verificando se o preço sobe mais rápido do
-  que cai depois de um choque, como o observado entre março e abril de 2026.
+- Acrescentar validações automáticas de formato na ingestão, com alerta quando a fonte mudar o padrão
+  dos arquivos.
+- Incluir dados de frete ou de distância até as bases de distribuição, para testar a relação entre o
+  custo logístico e a diferença regional de preços.
+- Estender a P1 com uma análise de assimetria de reajuste, verificando se os preços sobem mais rápido
+  do que caem após um aumento como o observado entre março e abril de 2026.
+- Configurar o repositório para não versionar os resultados de execução dos notebooks, evitando os
+  conflitos de sincronização descritos acima.
+
+## Referências
+
+AGÊNCIA NACIONAL DO PETRÓLEO, GÁS NATURAL E BIOCOMBUSTÍVEIS (ANP). **Série histórica de preços de
+combustíveis e de GLP**. Brasília, 2026. Disponível em:
+https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/serie-historica-de-precos-de-combustiveis.
+Acesso em: 21 set. 2026.
+
+AGÊNCIA NACIONAL DO PETRÓLEO, GÁS NATURAL E BIOCOMBUSTÍVEIS (ANP). **Metadados: série histórica de
+preços de combustíveis**. Brasília, 2026. Disponível em:
+https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/shpc/metadados-serie-historica-precos-combustiveis-1.pdf.
+Acesso em: 21 set. 2026.
+
+BRASIL. Decreto nº 8.777, de 11 de maio de 2016. Institui a Política de Dados Abertos do Poder
+Executivo federal. Brasília, DF: Presidência da República, 2016. Disponível em:
+https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2016/decreto/d8777.htm. Acesso em: 21 set. 2026.
+
+BRASIL. Lei nº 9.478, de 6 de agosto de 1997. Dispõe sobre a política energética nacional, as
+atividades relativas ao monopólio do petróleo, institui o Conselho Nacional de Política Energética e
+a Agência Nacional do Petróleo e dá outras providências. Brasília, DF: Presidência da República, 1997.
+Disponível em: https://www.planalto.gov.br/ccivil_03/leis/l9478.htm. Acesso em: 21 set. 2026.
+
+DAMA INTERNATIONAL. **DAMA-DMBOK**: data management body of knowledge. 2. ed. Basking Ridge: Technics
+Publications, 2017.
+
+DATABRICKS. **COMMENT ON**. Databricks on AWS, 2026. Disponível em:
+https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-comment. Acesso em: 24 set.
+2026.
+
+DATABRICKS. **What is the medallion lakehouse architecture?** Databricks on AWS, 2026. Disponível em:
+https://docs.databricks.com/aws/en/lakehouse/medallion. Acesso em: 24 set. 2026.
+
+KIMBALL, Ralph; ROSS, Margy. **The data warehouse toolkit**: the definitive guide to dimensional
+modeling. 3. ed. Indianapolis: Wiley, 2013.

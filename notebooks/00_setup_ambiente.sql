@@ -1,17 +1,16 @@
 -- Databricks notebook source
 -- MAGIC %md
--- MAGIC # 00 - Preparacao do ambiente
+-- MAGIC # 00 - Preparação do ambiente
 -- MAGIC
--- MAGIC Cria a estrutura que vai receber o pipeline: um catalogo para o projeto, um schema por camada
--- MAGIC da arquitetura medalhao e um volume para os arquivos brutos da ANP.
+-- MAGIC Cria a estrutura que recebe o pipeline: um catálogo para o projeto, um schema para cada camada da
+-- MAGIC arquitetura medalhão e um volume para os arquivos brutos da ANP.
 -- MAGIC
--- MAGIC Organizacao adotada: um catalogo por projeto e as camadas como schemas. O enunciado admite um
--- MAGIC catalogo por camada; optamos pelo arranjo de um catalogo unico porque o projeto vive em um
--- MAGIC ambiente so, os nomes qualificados ficam mais curtos nas consultas entre camadas e a permissao
--- MAGIC de criar catalogos pode ser limitada na Free Edition.
+-- MAGIC O enunciado sugere um catálogo por camada. Foi adotado um catálogo único, com as camadas como
+-- MAGIC schemas, porque o projeto está em um único ambiente e os nomes qualificados ficam mais curtos nas
+-- MAGIC consultas entre camadas.
 -- MAGIC
--- MAGIC O volume guarda arquivos; a tabela guarda linhas e colunas. O CSV bruto entra no volume e so
--- MAGIC depois vira tabela Delta na camada bronze.
+-- MAGIC O volume armazena arquivos, e as tabelas armazenam dados em linhas e colunas. Os CSV brutos ficam no
+-- MAGIC volume e só depois são carregados como tabela Delta na camada bronze.
 
 -- COMMAND ----------
 
@@ -37,9 +36,9 @@ COMMENT 'Arquivos CSV originais da Serie Historica de Precos de Combustiveis da 
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ## Conferencia
+-- MAGIC ## Conferência
 -- MAGIC
--- MAGIC As tres consultas abaixo servem de evidencia de que a estrutura foi criada.
+-- MAGIC As três consultas a seguir confirmam que a estrutura foi criada.
 
 -- COMMAND ----------
 

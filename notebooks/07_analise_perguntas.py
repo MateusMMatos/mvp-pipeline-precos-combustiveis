@@ -1,29 +1,28 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 07 - Analise: respostas as perguntas do objetivo
+# MAGIC # 07 - Análise: respostas às perguntas do objetivo
 # MAGIC
-# MAGIC Uma consulta para cada pergunta definida na etapa de objetivo, usando o modelo estrela da camada
-# MAGIC gold. As perguntas nao foram alteradas depois de ver os dados.
+# MAGIC Consultas para cada pergunta definida na etapa de objetivo, usando o modelo estrela da camada gold. As
+# MAGIC perguntas não foram alteradas depois da análise dos dados.
 # MAGIC
-# MAGIC | # | Pergunta | Decisao que ela apoia |
+# MAGIC | # | Pergunta | Decisão que ela apoia |
 # MAGIC |---|---|---|
-# MAGIC | P1 | Como o preco medio de cada combustivel evoluiu mes a mes entre julho de 2025 e junho de 2026? | Revisao do orcamento e do reembolso |
-# MAGIC | P2 | Quais estados tem a gasolina comum e o diesel S10 mais caros e mais baratos? | Reembolso por estado e onde abastecer em viagem longa |
-# MAGIC | P3 | Em quais estados compensa abastecer carro flex com etanol? | Politica de combustivel por estado |
-# MAGIC | P4 | Postos bandeirados cobram mais que postos de bandeira branca? | Autorizar ou nao bandeira branca |
-# MAGIC | P5 | Qual a diferenca de preco dentro do mesmo municipio na mesma semana? | Onde negociar convenio com postos |
+# MAGIC | P1 | Como o preço médio de cada combustível evoluiu mês a mês entre julho de 2025 e junho de 2026? | Revisão do orçamento e do reembolso |
+# MAGIC | P2 | Quais estados têm a gasolina comum e o diesel S10 mais caros e mais baratos? | Reembolso por estado e locais de abastecimento em viagens longas |
+# MAGIC | P3 | Em quais estados compensa abastecer carro flex com etanol? | Política de combustível por estado |
+# MAGIC | P4 | Postos bandeirados cobram mais que postos de bandeira branca? | Autorizar ou não a bandeira branca |
+# MAGIC | P5 | Qual a diferença de preço dentro do mesmo município na mesma semana? | Onde negociar convênio com postos |
 # MAGIC
-# MAGIC Uma regra vale para todas as consultas: o GNV fica de fora das comparacoes por litro, porque e
-# MAGIC medido em metro cubico. A coluna `comparavel_por_litro` da dimensao de produto existe para que essa
-# MAGIC regra nao dependa de quem escreve a consulta lembrar dela.
+# MAGIC Em todas as consultas, o GNV fica fora das comparações por litro, por ser medido em metro cúbico. A
+# MAGIC coluna `comparavel_por_litro` da dimensão de produto registra essa regra no modelo.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## P1 - Evolucao mensal do preco por combustivel
+# MAGIC ## P1 - Evolução mensal do preço por combustível
 # MAGIC
-# MAGIC Media do preco coletado por mes e por combustivel. A contagem de coletas aparece ao lado para deixar
-# MAGIC claro sobre quantas observacoes cada media foi calculada.
+# MAGIC Média do preço coletado por mês e por combustível. A contagem de coletas mostra quantas observações
+# MAGIC formam cada média.
 
 # COMMAND ----------
 
@@ -42,7 +41,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Variacao entre o primeiro e o ultimo mes do periodo, por combustivel.
+# MAGIC Variação entre o primeiro e o último mês do período, por combustível.
 
 # COMMAND ----------
 
@@ -78,9 +77,9 @@
 # MAGIC %md
 # MAGIC ## P2 - Estados mais caros e mais baratos
 # MAGIC
-# MAGIC Media por estado para a gasolina comum e o diesel S10, os dois combustiveis que a frota usa. A
-# MAGIC posicao de cada estado aparece como numero de ordem, e a ultima coluna mostra quanto o estado esta
-# MAGIC acima ou abaixo da media nacional.
+# MAGIC Média por estado da gasolina comum e do diesel S10, os dois combustíveis usados pela frota. A posição
+# MAGIC de cada estado aparece como número de ordem, e a última coluna mostra a diferença em relação à média
+# MAGIC nacional.
 
 # COMMAND ----------
 
@@ -114,7 +113,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Distancia entre o estado mais caro e o mais barato, por combustivel. E o numero que interessa para
+# MAGIC Distância entre o estado mais caro e o mais barato, por combustível. É o valor mais relevante para
 # MAGIC decidir se o reembolso deve variar por estado.
 
 # COMMAND ----------
@@ -143,8 +142,8 @@
 # MAGIC %md
 # MAGIC ## P3 - Onde compensa abastecer com etanol
 # MAGIC
-# MAGIC O etanol rende cerca de 70% do que a gasolina rende por litro, entao so compensa quando custa ate
-# MAGIC 70% do preco dela. A consulta calcula essa razao por estado no periodo inteiro.
+# MAGIC O etanol rende cerca de 70% do que a gasolina rende por litro, então só compensa quando custa até 70%
+# MAGIC do preço dela. A consulta calcula essa razão por estado no período completo.
 
 # COMMAND ----------
 
@@ -173,8 +172,8 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC A mesma razao mes a mes, nos estados onde a media anual ficou mais proxima do limite. Serve para
-# MAGIC saber se a decisao e estavel durante o ano ou se muda com a safra da cana.
+# MAGIC A mesma razão calculada mês a mês, nos estados em que o etanol compensou em pelo menos um mês. A
+# MAGIC consulta mostra se a decisão se mantém ao longo do ano.
 
 # COMMAND ----------
 
@@ -208,10 +207,9 @@
 # MAGIC %md
 # MAGIC ## P4 - Bandeirado contra bandeira branca
 # MAGIC
-# MAGIC A comparacao e feita **dentro de cada estado**, e nao na media nacional. Os dois tipos de posto nao
-# MAGIC estao distribuidos igualmente pelo pais: se a bandeira branca for mais comum em estados baratos, uma
-# MAGIC media nacional atribuiria a marca uma diferenca que e, na verdade, geografica. Comparar dentro do
-# MAGIC mesmo estado remove esse efeito.
+# MAGIC A comparação é feita dentro de cada estado, e não pela média nacional. Os dois tipos de posto não
+# MAGIC estão distribuídos igualmente pelo país; se a bandeira branca for mais comum em estados mais baratos,
+# MAGIC a média nacional atribuiria à marca uma diferença que, na verdade, é regional.
 
 # COMMAND ----------
 
@@ -250,9 +248,9 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Resumo da P4: em quantos estados o posto de bandeira branca sai mais barato, e qual a diferenca
-# MAGIC tipica. A mediana entra ao lado da media porque um unico estado com diferenca extrema puxaria a
-# MAGIC media sozinho.
+# MAGIC Resumo da P4: em quantos estados o posto de bandeira branca é mais barato e qual é a diferença
+# MAGIC típica. A mediana é apresentada junto com a média porque um estado com diferença extrema poderia
+# MAGIC distorcer a média.
 
 # COMMAND ----------
 
@@ -283,16 +281,17 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## P5 - Dispersao dentro do mesmo municipio
+# MAGIC ## P5 - Dispersão dentro do mesmo município
 # MAGIC
-# MAGIC Compara o posto mais barato com o mais caro do mesmo municipio, na mesma semana e para o mesmo
-# MAGIC combustivel. Tres cuidados na consulta:
+# MAGIC Compara o posto mais barato e o mais caro do mesmo município, na mesma semana e para o mesmo
+# MAGIC combustível. Foram adotados os seguintes cuidados:
 # MAGIC
-# MAGIC 1. A semana e identificada pela data da segunda-feira, e nao por um rotulo de numero de semana.
-# MAGIC 2. So entram grupos com pelo menos cinco postos pesquisados; com dois ou tres postos, a amplitude
-# MAGIC    diz mais sobre a amostra do que sobre o mercado local.
-# MAGIC 3. O resultado por municipio e a media das amplitudes semanais, e nao a amplitude do ano inteiro,
-# MAGIC    que misturaria variacao de preco no tempo com diferenca entre postos.
+# MAGIC 1. A semana é identificada pela data da segunda-feira, e não por um rótulo de número da semana.
+# MAGIC 2. Só entram grupos com pelo menos cinco postos pesquisados; com dois ou três postos, a amplitude
+# MAGIC    reflete mais a amostra do que o mercado local.
+# MAGIC 3. O resultado por município é a média das amplitudes semanais, e não a amplitude do ano inteiro, que
+# MAGIC    misturaria a variação de preço ao longo do tempo com a diferença entre postos.
+# MAGIC 4. Na lista de municípios, só entram os que tiveram pelo menos 20 semanas nessas condições.
 
 # COMMAND ----------
 
@@ -328,8 +327,8 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Visao geral da P5: quanto se ganha, em media, escolhendo o posto mais barato do municipio em vez de
-# MAGIC abastecer no primeiro que aparecer.
+# MAGIC Visão geral da P5: quanto se economiza, em média, ao abastecer no posto mais barato do município em
+# MAGIC vez de pagar o preço médio local.
 
 # COMMAND ----------
 
@@ -358,14 +357,13 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Limitacoes das respostas
+# MAGIC ## Limitações das respostas
 # MAGIC
-# MAGIC Tres pontos que valem para todas as perguntas e que precisam acompanhar qualquer decisao tomada a
-# MAGIC partir delas:
+# MAGIC Três pontos valem para todas as perguntas e devem acompanhar qualquer decisão tomada a partir delas:
 # MAGIC
-# MAGIC 1. **A pesquisa e amostral.** A ANP cobre uma amostra de postos em pouco mais de 400 municipios, e
-# MAGIC    nao todos os postos do pais. As conclusoes valem para os municipios pesquisados.
-# MAGIC 2. **Preco de bomba nao e preco negociado.** Frota com contrato ou cartao combustivel costuma pagar
-# MAGIC    valor diferente do exibido na placa, que e o que a pesquisa registra.
-# MAGIC 3. **Media esconde distribuicao.** Um estado com preco medio baixo pode ter municipios caros. Por
-# MAGIC    isso a P5 olha o municipio, e nao so o estado.
+# MAGIC 1. A pesquisa é amostral: a ANP cobre uma amostra de postos em pouco mais de 400 municípios, e não
+# MAGIC    todos os postos do país. As conclusões valem para os municípios pesquisados.
+# MAGIC 2. O preço registrado é o da bomba. Frotas com contrato ou cartão combustível costumam pagar valores
+# MAGIC    negociados diferentes.
+# MAGIC 3. As médias não mostram a distribuição: um estado com preço médio baixo pode ter municípios caros, e
+# MAGIC    por isso a P5 é analisada por município.

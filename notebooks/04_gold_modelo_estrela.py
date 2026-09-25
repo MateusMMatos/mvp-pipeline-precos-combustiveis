@@ -2,15 +2,15 @@
 # MAGIC %md
 # MAGIC # 04 - Camada gold: modelo estrela
 # MAGIC
-# MAGIC Constroi as quatro dimensoes e a tabela de fatos desenhadas em `docs/modelagem.md`, a partir da
-# MAGIC camada silver.
+# MAGIC Constrói as quatro dimensões e a tabela de fatos definidas em `docs/modelagem.md`, a partir da camada
+# MAGIC silver.
 # MAGIC
-# MAGIC Grao da fato: um preco, de um combustivel, em um posto, em uma data de coleta. E o nivel mais fino
-# MAGIC que a fonte fornece, e guardar nele mantem todas as agregacoes possiveis (semana, mes, municipio,
-# MAGIC estado, bandeira).
+# MAGIC Grão da fato: um preço, de um combustível, em um posto, em uma data de coleta. É o nível mais
+# MAGIC detalhado que a fonte oferece, o que mantém possíveis todas as agregações usadas na análise (semana,
+# MAGIC mês, município, estado e bandeira).
 # MAGIC
-# MAGIC Cada dimensao recebe uma chave substituta, numerica e sequencial. A chave natural continua gravada
-# MAGIC na dimensao para rastreabilidade.
+# MAGIC Cada dimensão recebe uma chave substituta numérica e sequencial. A chave natural é mantida na dimensão
+# MAGIC para rastreabilidade.
 
 # COMMAND ----------
 
@@ -27,10 +27,10 @@ print(f"Linhas na silver: {silver.count()}")
 # MAGIC %md
 # MAGIC ## dim_produto
 # MAGIC
-# MAGIC Alem do nome publicado pela ANP, a dimensao classifica o combustivel em grupo e marca se ele pode
-# MAGIC entrar em comparacoes por litro. O GNV e vendido em metro cubico: incluir o preco dele em uma media
-# MAGIC por estado produziria um numero sem significado. A marcacao deixa essa regra explicita no modelo,
-# MAGIC em vez de depender de quem escreve a consulta lembrar dela.
+# MAGIC Além do nome publicado pela ANP, a dimensão classifica o combustível em grupos e indica se ele pode
+# MAGIC entrar em comparações por litro. Como o GNV é vendido em metro cúbico, incluí-lo em uma média por
+# MAGIC estado produziria um valor sem significado. A indicação no modelo evita que essa regra dependa de quem
+# MAGIC escreve cada consulta.
 
 # COMMAND ----------
 
@@ -59,9 +59,9 @@ display(spark.table("combustiveis.gold.dim_produto"))
 # MAGIC %md
 # MAGIC ## dim_bandeira
 # MAGIC
-# MAGIC A classificacao em BANDEIRADO e BRANCA vem da definicao da propria ANP: posto bandeirado exibe a
-# MAGIC marca de uma distribuidora e so vende o combustivel dela; posto de bandeira branca nao exibe marca.
-# MAGIC E essa coluna que responde a pergunta P4 sem precisar listar as dezenas de marcas existentes.
+# MAGIC A classificação em BANDEIRADO e BRANCA segue a definição da ANP: o posto bandeirado exibe a marca de
+# MAGIC uma distribuidora e só vende o combustível dela; o posto de bandeira branca não exibe marca. Essa
+# MAGIC coluna permite responder à P4 sem listar as dezenas de marcas existentes.
 
 # COMMAND ----------
 
@@ -87,14 +87,13 @@ display(spark.table("combustiveis.gold.dim_bandeira").orderBy("bandeira"))
 # MAGIC %md
 # MAGIC ## dim_posto
 # MAGIC
-# MAGIC Um registro por posto, identificado pelo CNPJ apenas com digitos.
+# MAGIC Um registro por posto, identificado pelo CNPJ apenas com dígitos.
 # MAGIC
-# MAGIC Os atributos cadastrais de um mesmo posto podem variar entre coletas, porque a fonte atualiza o
-# MAGIC cadastro ao longo do tempo. A regra adotada e guardar a versao mais recente observada, o que em
-# MAGIC modelagem dimensional e a dimensao de mudanca lenta do tipo 1: o valor antigo e sobrescrito e nao
-# MAGIC ha historico do atributo. A escolha cabe aqui porque nenhuma das cinco perguntas depende do
-# MAGIC endereco antigo de um posto. A bandeira, que muda e importa para a analise, nao entra nesta
-# MAGIC dimensao justamente por isso.
+# MAGIC Os atributos cadastrais de um posto podem variar entre coletas, porque a fonte atualiza o cadastro ao
+# MAGIC longo do tempo. A regra adotada é guardar a versão mais recente, o que corresponde a uma dimensão de
+# MAGIC mudança lenta do tipo 1: o valor anterior é sobrescrito e o histórico do atributo não é mantido. A
+# MAGIC escolha é adequada porque nenhuma das perguntas depende do endereço anterior de um posto. A bandeira,
+# MAGIC cujo histórico importa para a análise, fica fora desta dimensão por esse motivo.
 
 # COMMAND ----------
 
@@ -144,15 +143,14 @@ display(spark.table("combustiveis.gold.dim_posto").limit(10))
 # MAGIC %md
 # MAGIC ## dim_tempo
 # MAGIC
-# MAGIC Gerada como calendario continuo entre a primeira e a ultima coleta, e nao apenas com as datas
-# MAGIC presentes nos dados. Assim, uma consulta por mes mostra um mes sem coleta como zero, em vez de
-# MAGIC simplesmente omitir a linha e dar a impressao de que o mes nao existiu.
+# MAGIC Gerada como um calendário contínuo entre a primeira e a última coleta, e não apenas com as datas
+# MAGIC presentes nos dados. Assim, um mês sem coletas aparece nas consultas com valor zero, em vez de
+# MAGIC simplesmente não aparecer.
 # MAGIC
-# MAGIC A semana e identificada pela data da segunda-feira que a inicia (`semana_inicio`), e nao por um
-# MAGIC rotulo de ano e numero da semana. O rotulo textual tem um problema conhecido na virada do ano: a
-# MAGIC semana de 29/12/2025 a 04/01/2026 pertence a dois anos civis, e qualquer convencao de nome gera
-# MAGIC ambiguidade. Uma data nunca e ambigua, ordena corretamente e serve de chave de agrupamento na
-# MAGIC pergunta P5. O rotulo `ano_semana` continua disponivel apenas para leitura.
+# MAGIC A semana é identificada pela data da segunda-feira em que começa (`semana_inicio`), e não por um
+# MAGIC rótulo de ano e número da semana. Na virada do ano, a semana de 29/12/2025 a 04/01/2026 pertence a
+# MAGIC dois anos civis, e o rótulo fica ambíguo. A data não tem esse problema, mantém a ordenação correta e é
+# MAGIC usada como chave de agrupamento na P5. O rótulo `ano_semana` fica disponível apenas para leitura.
 
 # COMMAND ----------
 
@@ -193,12 +191,12 @@ display(spark.table("combustiveis.gold.dim_tempo").limit(10))
 # MAGIC %md
 # MAGIC ## fato_preco_coleta
 # MAGIC
-# MAGIC Junta a silver com as tres dimensoes para trocar os atributos descritivos pelas chaves substitutas.
-# MAGIC A data fica como chave da dimensao de tempo.
+# MAGIC Une a silver às três dimensões para substituir os atributos descritivos pelas chaves substitutas. A
+# MAGIC data permanece como chave da dimensão de tempo.
 # MAGIC
-# MAGIC As juncoes sao feitas por: produto e unidade de medida com dim_produto; bandeira com dim_bandeira;
-# MAGIC CNPJ apenas com digitos com dim_posto. Como as tres dimensoes foram derivadas da propria silver,
-# MAGIC nenhuma linha pode ficar sem correspondencia, e a validacao logo abaixo confirma isso.
+# MAGIC As junções usam produto e unidade de medida com a dim_produto, bandeira com a dim_bandeira e CNPJ
+# MAGIC apenas com dígitos com a dim_posto. Como as dimensões foram derivadas da própria silver, todas as
+# MAGIC linhas devem encontrar correspondência, o que é conferido na validação a seguir.
 
 # COMMAND ----------
 
@@ -242,10 +240,10 @@ print(f"Linhas na fato: {spark.table('combustiveis.gold.fato_preco_coleta').coun
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Validacao do modelo
+# MAGIC ## Validação do modelo
 # MAGIC
-# MAGIC Duas perguntas que precisam ser respondidas antes de usar o modelo em qualquer analise:
-# MAGIC a fato preservou todas as linhas da silver, e nenhuma chave ficou sem correspondencia.
+# MAGIC Duas verificações antes de usar o modelo na análise: se a fato manteve todas as linhas da silver e se
+# MAGIC alguma chave ficou sem correspondência.
 
 # COMMAND ----------
 
@@ -270,8 +268,8 @@ print(f"Diferenca (esperado 0): {linhas_silver - linhas_fato}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Teste de uso do modelo: a consulta abaixo usa a fato e tres dimensoes ao mesmo tempo. Se o modelo
-# MAGIC estiver correto, ela responde a pergunta P1 em poucas linhas de SQL.
+# MAGIC Teste de uso do modelo: a consulta a seguir combina a fato com duas dimensões e responde à P1 com
+# MAGIC poucas linhas de SQL.
 
 # COMMAND ----------
 

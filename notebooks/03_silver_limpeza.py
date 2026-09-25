@@ -1,19 +1,18 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 03 - Camada silver: limpeza e padronizacao
+# MAGIC # 03 - Camada silver: limpeza e padronização
 # MAGIC
-# MAGIC Le a tabela bronze e grava uma tabela com o dado tipado, padronizado e sem duplicatas. Cada
-# MAGIC transformacao aqui corresponde a um problema medido no notebook 02, e o efeito de cada uma e
-# MAGIC contado e gravado na tabela `combustiveis.silver.log_transformacoes`.
+# MAGIC Lê a tabela bronze e grava uma tabela com os dados tipados, padronizados e sem duplicatas. Cada
+# MAGIC transformação corresponde a um problema medido no notebook 02, e a quantidade de linhas afetadas por
+# MAGIC cada uma é gravada na tabela `combustiveis.silver.log_transformacoes`.
 # MAGIC
-# MAGIC O motivo de a camada existir ficou evidente no perfil de qualidade: os dois arquivos vem da mesma
-# MAGIC agencia e do mesmo levantamento, mas nao seguem o mesmo padrao. O arquivo de jan-jun/2026 traz o
-# MAGIC CNPJ com um espaco a esquerda em todas as linhas e o de jul-dez/2025 nao; o de jul-dez/2025 tem
-# MAGIC precos com uma casa decimal e ate sem virgula, o outro nao; a unidade do GNV aparece como
-# MAGIC "R$ / m3" em um arquivo e "R$ / m3" com expoente no outro. A bronze preserva essas divergencias
-# MAGIC como evidencia; a silver as resolve.
+# MAGIC O perfil de qualidade mostrou que os dois arquivos, embora venham do mesmo levantamento, não seguem o
+# MAGIC mesmo padrão. O arquivo de jan-jun/2026 traz o CNPJ com espaço à esquerda em todas as linhas, e o de
+# MAGIC jul-dez/2025 não; o de jul-dez/2025 tem preços com uma casa decimal e até sem vírgula, e o outro não;
+# MAGIC a unidade do GNV aparece como "R$ / m3" em um arquivo e "R$ / m³" no outro. A bronze mantém essas
+# MAGIC divergências, e a silver as padroniza.
 # MAGIC
-# MAGIC O que esta camada nao faz: classificar, agrupar ou enriquecer. Isso e modelagem, e acontece na gold.
+# MAGIC Classificações e agrupamentos não são feitos nesta camada, e sim na gold, como parte da modelagem.
 
 # COMMAND ----------
 
@@ -41,8 +40,8 @@ def anotar(transformacao, motivo, linhas_afetadas):
 # MAGIC %md
 # MAGIC ## 1. Duplicatas exatas
 # MAGIC
-# MAGIC Linhas identicas em todas as colunas da fonte. Sao coletas registradas duas vezes: nao acrescentam
-# MAGIC informacao e puxariam a media do posto para o valor repetido.
+# MAGIC Linhas idênticas em todas as colunas da fonte. Correspondem a coletas registradas duas vezes, que não
+# MAGIC trazem informação nova e pesariam em dobro na média do posto.
 
 # COMMAND ----------
 
@@ -57,10 +56,10 @@ anotar(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Espacos no texto
+# MAGIC ## 2. Espaços no texto
 # MAGIC
-# MAGIC Remove espaco no inicio e no fim e reduz sequencias de espacos a um so. Sem isso, o mesmo posto
-# MAGIC apareceria duas vezes na dimensao por causa de um espaco a mais no nome.
+# MAGIC Remove os espaços no início e no fim dos campos e reduz sequências de espaços a um só. Sem essa etapa,
+# MAGIC um espaço a mais no nome faria o mesmo posto aparecer duas vezes na dimensão.
 
 # COMMAND ----------
 
@@ -99,11 +98,11 @@ anotar(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Tipagem do preco
+# MAGIC ## 3. Tipagem do preço
 # MAGIC
-# MAGIC O preco vem como texto com virgula decimal, e o arquivo de jul-dez/2025 tem tres variantes: duas
-# MAGIC casas decimais, uma casa decimal e valores inteiros sem virgula. A conversao trata as tres, e a
-# MAGIC contagem de nulos apos a conversao confirma que nenhum valor se perdeu.
+# MAGIC O preço vem como texto com vírgula decimal, e o arquivo de jul-dez/2025 tem três variantes: duas casas
+# MAGIC decimais, uma casa decimal e valores inteiros sem vírgula. A conversão trata as três, e a contagem de
+# MAGIC nulos após a conversão confirma que nenhum valor se perdeu.
 
 # COMMAND ----------
 
@@ -128,8 +127,8 @@ print(f"Precos publicados sem virgula: {precos_sem_virgula}")
 # MAGIC %md
 # MAGIC ## 4. Tipagem da data
 # MAGIC
-# MAGIC Texto em dd/mm/aaaa convertido para date. Sem isso, ordenar por data ordenaria alfabeticamente,
-# MAGIC colocando 01/12 antes de 02/07.
+# MAGIC Conversão do texto em dd/mm/aaaa para o tipo date. Como texto, a ordenação seria alfabética e
+# MAGIC colocaria 01/12 antes de 02/07.
 
 # COMMAND ----------
 
@@ -148,9 +147,8 @@ print(f"Datas que nao converteram (esperado 0): {datas_perdidas}")
 # MAGIC %md
 # MAGIC ## 5. CNPJ
 # MAGIC
-# MAGIC Mantem o CNPJ formatado, que e como a ANP publica e como uma pessoa le, e cria uma versao apenas
-# MAGIC com digitos para servir de chave natural do posto. Chave com mascara quebra assim que a fonte
-# MAGIC mudar a pontuacao.
+# MAGIC O CNPJ com máscara é mantido para leitura, e uma versão apenas com dígitos é criada para servir de
+# MAGIC chave natural do posto. Uma chave com máscara deixaria de funcionar se a fonte mudasse a pontuação.
 
 # COMMAND ----------
 
@@ -169,9 +167,9 @@ print(f"CNPJ sem 14 digitos (esperado 0): {cnpj_invalido}")
 # MAGIC %md
 # MAGIC ## 6. Unidade de medida
 # MAGIC
-# MAGIC A unidade do GNV aparece com duas grafias diferentes, uma em cada arquivo. Unificamos na forma sem
-# MAGIC caractere especial, para nao depender de codificacao. Enquanto existirem duas grafias, qualquer
-# MAGIC agrupamento por unidade separa o GNV em dois grupos que deveriam ser um.
+# MAGIC A unidade do GNV aparece com uma grafia diferente em cada arquivo. As duas foram unificadas na forma
+# MAGIC sem caractere especial, para não depender da codificação. Com duas grafias, qualquer agrupamento por
+# MAGIC unidade dividiria o GNV em dois grupos.
 
 # COMMAND ----------
 
@@ -192,10 +190,10 @@ anotar(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 7. Numero do logradouro
+# MAGIC ## 7. Número do logradouro
 # MAGIC
-# MAGIC As variantes de "sem numero" (S/N, SN, S N, S/No) viram uma forma unica. Valores como 99-A sao
-# MAGIC numeros de verdade e ficam como estao.
+# MAGIC As variantes de "sem número" (S/N, SN, S N, S/Nº) são unificadas em S/N. Valores como 99-A são
+# MAGIC números válidos e não são alterados.
 
 # COMMAND ----------
 
@@ -214,11 +212,11 @@ anotar(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 8. Descarte da coluna sem conteudo
+# MAGIC ## 8. Descarte da coluna sem conteúdo
 # MAGIC
-# MAGIC `valor_compra` esta vazia em todas as linhas porque a ANP encerrou essa coleta em agosto de 2020,
-# MAGIC conforme o dicionario oficial. Manter uma coluna vazia no modelo final convida alguem a tentar
-# MAGIC calcular margem com ela.
+# MAGIC `valor_compra` está vazia em todas as linhas porque a ANP encerrou essa coleta em agosto de 2020,
+# MAGIC conforme o dicionário oficial. A coluna é descartada para não ser usada por engano em cálculos de
+# MAGIC margem.
 
 # COMMAND ----------
 
@@ -231,10 +229,11 @@ anotar(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Selecao final e gravacao
+# MAGIC ## Seleção final e gravação
 # MAGIC
-# MAGIC Os nomes finais descrevem o conteudo: `revenda` vira `razao_social`, `nome_rua` vira `logradouro`.
-# MAGIC Os metadados de controle da bronze sao preservados e um novo marca o processamento da silver.
+# MAGIC Os nomes finais descrevem melhor o conteúdo: `revenda` passa a se chamar `razao_social`, e
+# MAGIC `nome_rua`, `logradouro`. Os metadados de controle da bronze são mantidos, e um novo campo registra o
+# MAGIC momento do processamento na silver.
 
 # COMMAND ----------
 
@@ -273,10 +272,9 @@ print(f"Linhas gravadas na silver: {spark.table(TABELA_SILVER).count()}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Registro das transformacoes
+# MAGIC ## Registro das transformações
 # MAGIC
-# MAGIC A tabela abaixo fica gravada para que a documentacao do pipeline nao dependa de alguem lembrar o
-# MAGIC que foi feito.
+# MAGIC A tabela a seguir fica gravada, para que a documentação do pipeline não dependa de registro manual.
 
 # COMMAND ----------
 
@@ -290,9 +288,9 @@ display(log)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Validacao da camada
+# MAGIC ## Validação da camada
 # MAGIC
-# MAGIC Tres verificacoes que precisam passar antes de a gold ser construida.
+# MAGIC Três verificações que precisam passar antes da construção da camada gold.
 
 # COMMAND ----------
 
