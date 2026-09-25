@@ -688,7 +688,7 @@ neles), e **em qual posto** (3,53% de economia média dentro do próprio municí
 capitais). A quarta regra é temporal: o diesel subiu 16,67% no ano contra 7,17% da gasolina, então as
 duas frotas precisam de projeções orçamentárias separadas.
 
-Vale notar que as três primeiras dimensões são acumulativas e de esforço muito diferente. Mudar o
+As três primeiras dimensões são acumulativas, mas o esforço para capturar cada uma é bem diferente. Mudar o
 estado de abastecimento depende da rota e nem sempre é possível. Mudar o combustível depende da frota
 ser flex e vale para quatro estados. Já escolher o posto dentro da cidade não depende de nada: é a
 economia mais fácil de capturar, e também a mais ignorada, porque cada abastecimento individual parece
