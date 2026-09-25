@@ -55,8 +55,8 @@ semanal ou mensalmente, incorporando os arquivos novos.
 | Como é coletado | Pesquisa semanal presencial de preço ao consumidor, executada por empresa contratada, em amostra de postos revendedores |
 | Base legal | Lei 9.478/1997 (Lei do Petróleo), artigo 8º |
 | Período usado | Julho de 2025 a junho de 2026 |
-| Volume | 806.626 registros, em dois arquivos CSV (63,7 MB e 72,1 MB) |
-| Cobertura | 27 unidades da federação, 417 pares de estado e município, 7.963 postos no primeiro semestre de 2026 |
+| Volume | 806.626 registros, em dois arquivos CSV (60,8 MB e 68,8 MB) |
+| Cobertura | 27 unidades da federação, 419 pares de estado e município e 9.189 postos, considerando os dois semestres |
 | Produtos | Gasolina comum, gasolina aditivada, etanol hidratado, diesel, diesel S10 e GNV |
 
 Por se tratar de uma pesquisa amostral, e não de um censo dos postos, as conclusões valem para os
@@ -112,8 +112,8 @@ notebook, e o volume de dados não justificava um processo automatizado de colet
 Etapas executadas:
 
 1. Download dos dois arquivos semestrais, em formato ZIP, na página de dados abertos da ANP.
-2. Descompactação local, que resultou em `Precos_semestrais_-_AUTOMOTIVOS_2025.02.csv` (63,7 MB) e
-   `Precos_semestrais_-_AUTOMOTIVOS_2026.01.csv` (72,1 MB).
+2. Descompactação local, que resultou em `Precos_semestrais_-_AUTOMOTIVOS_2025.02.csv` (60,8 MB) e
+   `Precos_semestrais_-_AUTOMOTIVOS_2026.01.csv` (68,8 MB).
 3. Upload dos dois arquivos para o volume `combustiveis.bronze.arquivos_anp`, no Unity Catalog, sem
    alteração de conteúdo.
 4. Leitura dos arquivos pelo notebook de ingestão e gravação da tabela Delta `bronze.precos_anp`.
